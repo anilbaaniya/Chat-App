@@ -36,6 +36,12 @@ const messageSchema = new mongoose.Schema(
       default: "",
     },
 
+    messageType: {
+      type: String,
+      enum: ["text", "image", "file"],
+      default: "text",
+    },
+
     isSeen: {
       type: Boolean,
       default: false,
