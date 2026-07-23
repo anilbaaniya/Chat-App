@@ -26,7 +26,7 @@ export const createConversation = catchAsync(async (req, res, next) => {
   }
 
   // Create new conversation
-  conversation = Conversation.create({
+  conversation = await Conversation.create({
     participants: [senderId, receiverId],
   });
 
@@ -67,6 +67,6 @@ export const getConversations = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     result: conversations.length,
-    data: conversation,
+    data: conversations,
   });
 });
