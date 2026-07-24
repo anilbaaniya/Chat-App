@@ -2,6 +2,8 @@ import { Conversation } from "../models/conversationModel.js";
 import { Message } from "../models/messageModel.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../utils/appError.js";
+import { getIo, onlineUsers } from "../sockets/socket.js";
+import { emitToUser } from "../sockets/emit.js";
 
 export const sendMessage = catchAsync(async (req, res, next) => {
   const senderId = req.user._id;
@@ -38,6 +40,10 @@ export const sendMessage = catchAsync(async (req, res, next) => {
   conversation.lastMessageAt = message.createdAt;
 
   await conversation.save();
+
+  const io = getIo();
+
+  emitToUser(io, receiverId, "receive-message", message);
 
   res.status(201).json({
     status: "success",
