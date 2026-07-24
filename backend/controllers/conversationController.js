@@ -70,3 +70,79 @@ export const getConversations = catchAsync(async (req, res, next) => {
     data: conversations,
   });
 });
+
+export const markConversationAsSeen = catchAsync(async (req, res, next) => {
+  const { conversationId } = req.params;
+
+  // 1. Check conversation exists
+  const conversation = await Conversation.findById(conversationId);
+
+  if (!conversation) {
+    return next(new AppError("Conversation not found", 404));
+  }
+
+  // 2. Check current user is participant
+  const isParticipant = conversation.participants.some(
+    (participant) => participant.toString() === req.user._id.toString(),
+  );
+
+  if (!isParticipant) {
+    return next(
+      new AppError("You are not allowed to access this conversation", 403),
+    );
+  }
+
+  // 3. Find unread messages received by current user
+  const unreadMessages = await Message.find({
+    conversation: conversationId,
+    receiver: req.user._id,
+    isSeen: false,
+  }).select("_id sender");
+
+  if (unreadMessages.length === 0) {
+    return res.status(200).json({
+      status: "success",
+      message: "No unread messages",
+    });
+  }
+
+  const seenAt = new Date();
+
+  // 4. Mark all as seen
+  await Message.updateMany(
+    {
+      conversation: conversationId,
+      receiver: req.user._id,
+      isSeen: false,
+    },
+    {
+      $set: {
+        isSeen: true,
+        seenAt,
+      },
+    },
+  );
+
+  // 5. In one-to-one chat, all unread messages have the same sender
+  const senderId = unreadMessages[0].sender.toString();
+
+  // 6. Notify sender
+  const io = getIo();
+
+  emitToUser(io, senderId, "messages-seen", {
+    conversationId,
+    messageIds: unreadMessages.map((msg) => msg._id),
+    seenAt,
+  });
+
+  // 7. Response
+  res.status(200).json({
+    status: "success",
+    message: "Messages marked as seen",
+    data: {
+      conversationId,
+      messageIds: unreadMessages.map((msg) => msg._id),
+      seenAt,
+    },
+  });
+});

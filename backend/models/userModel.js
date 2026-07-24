@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    lastSeenAt: {
+      type: Date,
+      default: false,
+    },
+
     passwordChangedAt: Date,
   },
   { timestamps: true },

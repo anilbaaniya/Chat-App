@@ -1,3 +1,4 @@
+import { emitToUser } from "./emit.js";
 import { onlineUsers } from "./socket.js";
 
 export const registerSocketEvents = (io, socket) => {
@@ -29,5 +30,13 @@ export const registerSocketEvents = (io, socket) => {
     }
 
     console.log("Disconnected:", socket.id);
+  });
+
+  socket.on("typing", ({ receiverId }) => {
+    emitToUser(io, receiverId, "typing", { senderId: socket.userId });
+  });
+
+  socket.on("stop-typing", ({ receiverId }) => {
+    emitToUser(io, receiverId, "stop-typing", { senderId: socket.userId });
   });
 };

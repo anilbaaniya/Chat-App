@@ -15,6 +15,6 @@ messageRoute.route("/").post(sendMessage);
 
 messageRoute.get("/:conversationId", getMessages);
 
-messageRoute.delete("/messageId", deleteMessage);
+messageRoute.delete("/:messageId", deleteMessage);
 
-messageRoute.patch("/messageId/seen", seenMessage);
+messageRoute.patch("/:messageId/seen", seenMessage);

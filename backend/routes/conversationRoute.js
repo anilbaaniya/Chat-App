@@ -3,6 +3,7 @@ import {
   createConversation,
   getConversation,
   getConversations,
+  markConversationAsSeen,
 } from "../controllers/conversationController.js";
 import { protect } from "../controllers/authController.js";
 
@@ -12,3 +13,5 @@ conversationRoute.use(protect);
 
 conversationRoute.route("/").post(createConversation).get(getConversations);
 conversationRoute.route("/:conversationId").get(getConversation);
+
+conversationRoute.patch("/:conversationId/seen", markConversationAsSeen);
