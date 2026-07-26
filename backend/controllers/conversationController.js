@@ -1,6 +1,9 @@
 import { AppError } from "../utils/appError.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import { Conversation } from "../models/conversationModel.js";
+import { Message } from "../models/messageModel.js";
+import { getIo } from "../sockets/socket.js";
+import { emitToUser } from "../sockets/emit.js";
 
 // Create a Conversation
 export const createConversation = catchAsync(async (req, res, next) => {
@@ -94,7 +97,7 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
 
   // 3. Find unread messages received by current user
   const unreadMessages = await Message.find({
-    conversation: conversationId,
+    conversationId,
     receiver: req.user._id,
     isSeen: false,
   }).select("_id sender");
@@ -111,7 +114,7 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
   // 4. Mark all as seen
   await Message.updateMany(
     {
-      conversation: conversationId,
+      conversationId,
       receiver: req.user._id,
       isSeen: false,
     },

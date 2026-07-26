@@ -6,12 +6,15 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "A user must have name."],
+      trim: true,
     },
 
     email: {
       type: String,
       required: [true, "A user must have email."],
       unique: true,
+      lowercase: true,
+      trim: true,
     },
 
     password: {
@@ -44,7 +47,7 @@ const userSchema = new mongoose.Schema(
 
     lastSeenAt: {
       type: Date,
-      default: false,
+      default: null,
     },
 
     passwordChangedAt: Date,
@@ -59,6 +62,14 @@ userSchema.pre("save", async function () {
   this.confirmPassword = undefined;
 });
 
+userSchema.pre("save", async function () {
+  if (!this.isModified("password") || this.isNew) return;
+
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
 userSchema.methods.correctPassword = async function (
   enteredPassword,
   userPassword,
@@ -69,7 +80,7 @@ userSchema.methods.correctPassword = async function (
 userSchema.methods.changedPasswordAfter = async function (tokenIssuedAt) {
   if (this.passwordChangedAt) {
     const passwordChangedTime = parseInt(
-      this.passwordChangedAt.getTIme() / 1000,
+      this.passwordChangedAt.getTime() / 1000,
       10,
     );
     return tokenIssuedAt < passwordChangedTime;
