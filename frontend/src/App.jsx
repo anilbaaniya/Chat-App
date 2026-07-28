@@ -30,7 +30,7 @@ const router = createBrowserRouter([
 export default function App() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
-  console.log(isAuthenticated);
+  // console.log(isAuthenticated);
 
   useEffect(() => {
     dispatch(getCurrentUser());

@@ -4,7 +4,7 @@ import { TailSpin } from "react-loader-spinner";
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
-  console.log(user);
+  // console.log(user);
 
   if (loading) {
     <TailSpin height="60" width="60" color="#2563eb" ariaLabel="loading" />;
