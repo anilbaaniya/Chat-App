@@ -18,7 +18,7 @@ const conversationSchema = new mongoose.Schema(
 
     lastMessageSender: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Message",
+      ref: "User",
       default: null,
     },
 
@@ -35,5 +35,11 @@ const conversationSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Find all conversations of a user quickly
+conversationSchema.index({ participants: 1 });
+
+// Sort conversations by latest activity efficiently
+conversationSchema.index({ lastMessageAt: -1 });
 
 export const Conversation = mongoose.model("Conversation", conversationSchema);

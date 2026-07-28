@@ -65,12 +65,35 @@ export const getConversations = catchAsync(async (req, res, next) => {
   })
     .populate("participants", "name email profilePicture")
     .populate("lastMessage")
-    .sort("-updatedAt");
+    .sort("-lastMessageAt");
+
+  const formattedConversations = conversations.map((conversation) => {
+    // Find the other participant (not the logged-in user)
+    const otherUser = conversation.participants.find(
+      (participant) => participant._id.toString() !== req.user._id.toString(),
+    );
+
+    return {
+      _id: conversation._id,
+
+      user: otherUser,
+
+      lastMessage: conversation.lastMessage,
+
+      lastMessageAt: conversation.lastMessageAt,
+
+      unreadCount: conversation.unreadCount?.[req.user._id.toString()] ?? 0,
+
+      updatedAt: conversation.updatedAt,
+
+      createdAt: conversation.createdAt,
+    };
+  });
 
   res.status(200).json({
     status: "success",
-    result: conversations.length,
-    data: conversations,
+    result: formattedConversations.length,
+    data: formattedConversations,
   });
 });
 
