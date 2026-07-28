@@ -1,13 +1,24 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginUser } from "../redux/auth/authSlice";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     // console.log(user);
     e.preventDefault();
+    const result = await dispatch(loginUser({ email, password }));
+    console.log(result.payload.data);
+
+    if (loginUser.fulfilled.match(result)) {
+      navigate("/");
+    }
   };
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black">

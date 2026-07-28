@@ -3,8 +3,6 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss-clean";
 
 import { globalErrorHandler } from "./controllers/errorController.js";
 import { userRoute } from "./routes/userRoute.js";
@@ -15,7 +13,12 @@ export const app = express();
 
 app.use(helmet());
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 app.use(
   rateLimit({
@@ -23,10 +26,6 @@ app.use(
     max: 100,
   }),
 );
-
-app.use(mongoSanitize());
-
-app.use(xss());
 
 app.use(express.json());
 

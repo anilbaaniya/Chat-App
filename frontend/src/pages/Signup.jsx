@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { NavLink, useNavigate } from "react-router-dom";
+import { signupUser } from "../redux/auth/authSlice";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -7,9 +9,19 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     // console.log(user);
     e.preventDefault();
+    const result = await dispatch(
+      signupUser({ name, email, password, confirmPassword }),
+    );
+
+    if (signupUser.fulfilled.match(result)) {
+      navigate("/login");
+    }
   };
 
   return (

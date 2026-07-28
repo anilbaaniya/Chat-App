@@ -9,17 +9,36 @@ const signinToken = (id) => {
   });
 };
 
+const createSendToken = (user, statusCode, res) => {
+  const token = signinToken(user._id);
+  const isProduction = process.env.NODE_ENV === "production";
+
+  const tokenOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    secure: isProduction,
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  };
+
+  res.cookie("jwt", token, tokenOptions);
+
+  user.password = undefined;
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: user,
+  });
+};
+
 export const signup = catchAsync(async (req, res, next) => {
   const { name, email, password, confirmPassword } = req.body;
 
   const user = await User.create({ name, email, password, confirmPassword });
 
-  const token = signinToken(user._id);
-  res.status(201).json({
-    status: "success",
-    token,
-    data: user,
-  });
+  createSendToken(user, 201, res);
 });
 
 export const login = catchAsync(async (req, res, next) => {
@@ -35,23 +54,19 @@ export const login = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect email or password!", 401));
   }
 
-  const token = signinToken(user._id);
-
-  res.status(200).json({
-    status: "success",
-    token,
-    data: user,
-  });
+  createSendToken(user, 200, res);
 });
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;
-  // 1) Get a token and check of it's there
+  // 1) Get a token from the Authorization header or cookie
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
 
   if (!token) {
@@ -60,7 +75,7 @@ export const protect = catchAsync(async (req, res, next) => {
 
   // 2) Verified token
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  console.log(decoded);
+  // console.log(decoded);
 
   // 3) Check if user still exists
   const currentUser = await User.findById(decoded.id);
@@ -72,7 +87,7 @@ export const protect = catchAsync(async (req, res, next) => {
   }
 
   // 4) Check if user changed password after token was issued
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
+  if (await currentUser.changedPasswordAfter(decoded.iat)) {
     return next(
       new AppError(
         "User recently changed the password. Please login again!",

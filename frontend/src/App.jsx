@@ -2,6 +2,10 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import ProtectedLayout from "./ProtectedLayout";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { getCurrentUser } from "./redux/auth/authSlice";
 
 const router = createBrowserRouter([
   {
@@ -13,11 +17,23 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: "/",
-    element: <Home />,
+    element: <ProtectedLayout />,
+    children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
+    ],
   },
 ]);
 
 export default function App() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  console.log(isAuthenticated);
+
+  useEffect(() => {
+    dispatch(getCurrentUser());
+  }, [dispatch]);
   return <RouterProvider router={router} />;
 }

@@ -37,3 +37,15 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+export const getMe = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return next(new AppError("No user found!", 400));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: user,
+  });
+});
