@@ -3,10 +3,24 @@ import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../utils/appError.js";
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
-  if (!users) {
-    return next(new AppError("No users found!", 400));
+  const search = req.query.search?.trim();
+
+  // Don't return all users if search is empty
+  if (!search) {
+    return res.status(200).json({
+      status: "success",
+      result: 0,
+      data: [],
+    });
   }
+
+  const users = await User.find({
+    _id: { $ne: req.user._id },
+    name: {
+      $regex: `^${search}`,
+      $options: "i",
+    },
+  }).select("-password");
 
   res.status(200).json({
     status: "success",

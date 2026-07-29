@@ -14,28 +14,34 @@ export const createConversation = catchAsync(async (req, res, next) => {
     return next(new AppError("Receiver id is required", 400));
   }
 
-  // check whether the conversation already existed
   let conversation = await Conversation.findOne({
     participants: {
       $all: [senderId, receiverId],
     },
-  });
+  }).populate("participants", "name email profilePicture");
 
-  if (conversation) {
-    return res.status(200).json({
-      status: "success",
-      data: conversation,
+  if (!conversation) {
+    conversation = await Conversation.create({
+      participants: [senderId, receiverId],
     });
+
+    // 🔥 Populate after creating
+    conversation = await Conversation.findById(conversation._id).populate(
+      "participants",
+      "name email profilePicture",
+    );
   }
 
-  // Create new conversation
-  conversation = await Conversation.create({
-    participants: [senderId, receiverId],
-  });
+  const receiver = conversation.participants.find(
+    (participant) => participant._id.toString() !== senderId.toString(),
+  );
 
   res.status(200).json({
     status: "success",
-    data: conversation,
+    data: {
+      ...conversation.toObject(),
+      user: receiver,
+    },
   });
 });
 

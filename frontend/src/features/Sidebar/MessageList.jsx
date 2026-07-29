@@ -1,9 +1,22 @@
 import { IoPersonCircleSharp } from "react-icons/io5";
 import { formatConversationTime } from "../../utils/formatConversationTIme";
+import { useDispatch } from "react-redux";
+import { setSelectedConversation } from "../../redux/conversation/conversationSlice";
+import { fetchMessages } from "../../redux/message/messageSlice";
 
 export default function MessageList({ conversation }) {
+  const dispatch = useDispatch();
+  function handleClick() {
+    {
+      dispatch(setSelectedConversation(conversation));
+      dispatch(fetchMessages(conversation._id));
+    }
+  }
   return (
-    <div className="flex items-center justify-between py-4 pl-6 pr-8 mx-2 hover:bg-gray-100 cursor-pointer transition-all duration-200 rounded-xl">
+    <div
+      onClick={handleClick}
+      className="flex items-center justify-between py-4 pl-6 pr-8 mx-2 hover:bg-gray-100 cursor-pointer transition-all duration-200 rounded-xl"
+    >
       {/* Left Section */}
       <div className="flex items-center gap-3">
         <IoPersonCircleSharp className="text-5xl text-gray-400" />
@@ -14,7 +27,7 @@ export default function MessageList({ conversation }) {
           </span>
 
           <span className="text-gray-500 text-sm truncate">
-            {conversation.lastMessage.text}
+            {conversation.lastMessage?.text || "Start a conversation"}
           </span>
         </div>
       </div>

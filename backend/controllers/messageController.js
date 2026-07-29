@@ -24,7 +24,7 @@ export const sendMessage = catchAsync(async (req, res, next) => {
   }
 
   // Create message
-  const message = await Message.create({
+  let message = await Message.create({
     conversationId: conversation._id,
     sender: senderId,
     receiver: receiverId,
@@ -33,6 +33,13 @@ export const sendMessage = catchAsync(async (req, res, next) => {
     file,
     messageType,
   });
+
+  // Populate sender and receiver
+
+  await message.populate([
+    { path: "sender", select: "name email profilePicture" },
+    { path: "receiver", select: "name email profilePicture" },
+  ]);
 
   // Update last message
   conversation.lastMessage = message._id;
@@ -53,6 +60,15 @@ export const sendMessage = catchAsync(async (req, res, next) => {
 
 export const getMessages = catchAsync(async (req, res, next) => {
   const { conversationId } = req.params;
+
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    participants: req.user._id,
+  });
+
+  if (!conversation) {
+    return next(new AppError("Conversation not found.", 404));
+  }
 
   const messages = await Message.find({ conversationId })
     .populate("sender", "name email profilePicture")

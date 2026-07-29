@@ -1,6 +1,47 @@
 import { IoPersonCircleSharp, IoSend, IoAttach } from "react-icons/io5";
+import { useDispatch, useSelector } from "react-redux";
+
+import EmptyChat from "./EmptyChat";
+import { useState } from "react";
+import { sendMessage } from "../../redux/message/messageSlice";
 
 export default function Message() {
+  const [text, setText] = useState("");
+
+  const dispatch = useDispatch();
+
+  const { messages } = useSelector((state) => state.message);
+  const { selectedConversation } = useSelector((state) => state.conversation);
+  const { user } = useSelector((state) => state.auth);
+
+  console.log(messages);
+  console.log(selectedConversation);
+
+  if (!selectedConversation) {
+    return <EmptyChat />;
+  }
+
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  function handleSendMessage() {
+    if (!text.trim()) return;
+
+    const messageOptions = {
+      conversationId: selectedConversation._id,
+      receiverId: selectedConversation.user._id,
+      messageType: "text",
+      text,
+    };
+
+    dispatch(sendMessage(messageOptions));
+    setText("");
+  }
+
   return (
     <div className="flex h-screen flex-col bg-gray-50">
       {/* Header */}
@@ -9,58 +50,93 @@ export default function Message() {
           <IoPersonCircleSharp className="text-5xl text-gray-400" />
 
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">John Doe</h2>
+            <h2 className="text-lg font-semibold text-gray-800">
+              {selectedConversation.user.name}
+            </h2>
+
             <p className="text-sm text-green-600">● Online</p>
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {/* Received */}
-        <div className="flex justify-start">
-          <div className="max-w-xs rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow">
-            <p className="text-gray-800">
-              Hey Anil! How's your chat app going?
-            </p>
+      <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+        {messages.map((message) => {
+          const isMyMessage = message.sender._id === user._id;
 
-            <p className="mt-1 text-right text-xs text-gray-500">10:15 AM</p>
-          </div>
-        </div>
+          return (
+            <div
+              key={message._id}
+              className={`flex ${
+                isMyMessage ? "justify-end" : "justify-start"
+              }`}
+            >
+              {!isMyMessage && (
+                <IoPersonCircleSharp className="mr-2 mt-1 text-3xl text-gray-400" />
+              )}
 
-        {/* Sent */}
-        <div className="flex justify-end">
-          <div className="max-w-xs rounded-2xl rounded-br-md bg-blue-600 px-4 py-3 text-white shadow">
-            <p>It's going well! I'm working on the messaging UI now.</p>
+              <div
+                className={`max-w-xs rounded-2xl px-4 py-3 shadow lg:max-w-md ${
+                  isMyMessage
+                    ? "rounded-br-md bg-blue-600 text-white"
+                    : "rounded-bl-md bg-white text-gray-800"
+                }`}
+              >
+                {message.messageType === "text" && <p>{message.text}</p>}
 
-            <p className="mt-1 text-right text-xs text-blue-100">10:17 AM</p>
-          </div>
-        </div>
+                {message.messageType === "image" && (
+                  <img
+                    src={message.image}
+                    alt="Message"
+                    className="max-h-64 rounded-lg"
+                  />
+                )}
 
-        {/* Received */}
-        <div className="flex justify-start">
-          <div className="max-w-xs rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow">
-            <p>Nice! The UI already looks clean. 🚀</p>
+                {message.messageType === "file" && (
+                  <a
+                    href={message.file}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`underline ${
+                      isMyMessage ? "text-blue-100" : "text-blue-600"
+                    }`}
+                  >
+                    View File
+                  </a>
+                )}
 
-            <p className="mt-1 text-right text-xs text-gray-500">10:18 AM</p>
-          </div>
-        </div>
+                <p
+                  className={`mt-1 text-right text-xs ${
+                    isMyMessage ? "text-blue-100" : "text-gray-500"
+                  }`}
+                >
+                  {formatTime(message.createdAt)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Input */}
-      <div className="px-6 py-4">
-        <div className="flex items-center gap-3 rounded-full border border-gray-300 bg-white px-4 py-2">
-          <button className="text-gray-500 hover:text-blue-600 cursor-pointer">
+      <div className="border-t border-gray-200 bg-white px-6 py-4">
+        <div className="flex items-center gap-3 rounded-full border border-gray-300 px-4 py-2">
+          <button className="cursor-pointer text-gray-500 hover:text-blue-600">
             <IoAttach className="text-xl" />
           </button>
 
           <input
             type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 bg-transparent outline-none "
+            className="flex-1 bg-transparent outline-none"
           />
 
-          <button className="rounded-full bg-blue-600 p-2 text-sm text-white transition hover:bg-blue-700 cursor-pointer">
+          <button
+            onClick={handleSendMessage}
+            className="cursor-pointer rounded-full bg-blue-600 p-2 text-white transition hover:bg-blue-700"
+          >
             <IoSend />
           </button>
         </div>

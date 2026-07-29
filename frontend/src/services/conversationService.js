@@ -8,3 +8,13 @@ export const getConversations = async () => {
     throw error;
   }
 };
+
+export const createConversation = async (receiverId) => {
+  console.log(receiverId);
+  try {
+    return api.post("/conversations/", { receiverId });
+  } catch (error) {
+    if (error.response) throw error.response;
+    throw error;
+  }
+};

@@ -18,7 +18,7 @@ export default function Home() {
     getConversation();
   }, [dispatch]);
 
-  console.log(conversations);
+  // console.log(conversations);
   return (
     <div className="flex h-screen">
       <aside className="w-[30%] bg-stone-50 ">

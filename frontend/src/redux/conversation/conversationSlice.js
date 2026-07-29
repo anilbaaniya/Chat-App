@@ -1,17 +1,34 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getConversations } from "../../services/conversationService.js";
+import { createConversation as createConversationService } from "../../services/conversationService.js";
+
 const initialState = {
-  user: null,
+  conversations: [],
+  selectedConversation: null,
   loading: false,
   error: null,
 };
+
+export const createConversation = createAsyncThunk(
+  "conversation/createConversation",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await createConversationService(userId);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Something went wrong",
+      );
+    }
+  },
+);
 
 export const fetchConversations = createAsyncThunk(
   "conversation/getConversation",
   async (_, { rejectWithValue }) => {
     try {
       const response = await getConversations();
-      console.log(response.data);
+      // console.log(response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -24,6 +41,50 @@ export const fetchConversations = createAsyncThunk(
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,
+  reducers: {
+    setSelectedConversation(state, action) {
+      state.selectedConversation = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchConversations.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchConversations.fulfilled, (state, action) => {
+        state.loading = false;
+        state.conversations = action.payload.data;
+        state.error = null;
+      })
+      .addCase(fetchConversations.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createConversation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createConversation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedConversation = action.payload.data;
+
+        // Optional: Add the conversation to the list if it's not already there
+        const exists = state.conversations.some(
+          (conversation) => conversation._id === action.payload.data._id,
+        );
+
+        if (!exists) {
+          state.conversations.unshift(action.payload.data);
+        }
+      })
+      .addCase(createConversation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  },
 });
+
+export const { setSelectedConversation } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

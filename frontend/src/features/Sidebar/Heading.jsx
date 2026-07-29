@@ -1,5 +1,5 @@
 import { IoChatboxEllipses } from "react-icons/io5";
-import { IoSearchSharp } from "react-icons/io5";
+import SearchBox from "./SearchBox";
 
 export default function Heading() {
   return (
@@ -17,15 +17,7 @@ export default function Heading() {
       </div>
 
       {/* Search Box */}
-      <div className="flex items-center bg-white rounded-xl px-4 py-3 transition-all duration-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 shadow-sm">
-        <IoSearchSharp className="text-gray-500 text-xl" />
-
-        <input
-          type="text"
-          placeholder="Search conversations..."
-          className="w-full ml-3 bg-transparent text-gray-700 placeholder:text-gray-400 outline-none"
-        />
-      </div>
+      <SearchBox />
     </div>
   );
 }
