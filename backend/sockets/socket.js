@@ -8,7 +8,7 @@ export const initializeSocket = (io) => {
   ioInstance = io;
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+    // console.log("User connected:", socket.id);
     registerSocketEvents(io, socket);
   });
 };

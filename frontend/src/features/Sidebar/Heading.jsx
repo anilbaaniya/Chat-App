@@ -7,7 +7,7 @@ export default function Heading() {
       {/* Logo */}
       <div className="flex items-center gap-4 mb-5">
         <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100">
-          <IoChatboxEllipses className="text-blue-600 text-3xl" />
+          <IoChatboxEllipses className="text-indigo-600 text-3xl" />
         </div>
 
         <div>

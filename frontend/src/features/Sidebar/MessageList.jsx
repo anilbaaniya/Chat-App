@@ -38,7 +38,7 @@ export default function MessageList({ conversation }) {
           {formatConversationTime(conversation.lastMessageAt)}
         </span>
 
-        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-semibold">
+        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-semibold">
           3
         </span>
       </div>

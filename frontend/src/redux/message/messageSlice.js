@@ -66,7 +66,7 @@ const messageSlice = createSlice({
   initialState,
   reducers: {
     addMessage(state, action) {
-      state.messages = state.messages.push(action.payload);
+      state.messages.push(action.payload);
     },
     messagesSeen(state, action) {
       updateSeenMessages(state, action.payload);

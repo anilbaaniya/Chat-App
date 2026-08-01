@@ -22,6 +22,7 @@ export default function Message() {
   const dispatch = useDispatch();
 
   const { messages } = useSelector((state) => state.message);
+  console.log(messages);
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { user } = useSelector((state) => state.auth);
 
@@ -148,7 +149,7 @@ export default function Message() {
               <div
                 className={`max-w-xs lg:max-w-md rounded-2xl px-4 py-3 shadow ${
                   isMyMessage
-                    ? "bg-blue-600 text-white rounded-br-md"
+                    ? "bg-indigo-500 text-white rounded-br-md"
                     : "bg-white text-gray-800 rounded-bl-md"
                 }`}
               >
@@ -185,7 +186,7 @@ export default function Message() {
                     <MdDoneAll
                       size={18}
                       className={
-                        message.isSeen ? "text-blue-400" : "text-gray-300"
+                        message.isSeen ? "text-sky-400" : "text-gray-300"
                       }
                     />
                   )}
@@ -202,7 +203,7 @@ export default function Message() {
       {/* Input */}
       <div className="border-t border-gray-200 bg-white px-6 py-4">
         <div className="flex items-center gap-3 rounded-full border border-gray-300 px-4 py-2">
-          <button className="cursor-pointer text-gray-500 hover:text-blue-600">
+          <button className="cursor-pointer text-gray-500 hover:text-blue-300">
             <IoAttach className="text-xl" />
           </button>
 
@@ -221,7 +222,7 @@ export default function Message() {
 
           <button
             onClick={handleSendMessage}
-            className="cursor-pointer rounded-full bg-blue-600 p-2 text-white transition hover:bg-blue-700"
+            className="cursor-pointer rounded-full bg-indigo-500 p-2 text-white transition hover:bg-indigo-700"
           >
             <IoSend />
           </button>

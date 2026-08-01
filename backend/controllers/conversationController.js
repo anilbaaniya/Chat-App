@@ -232,7 +232,7 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
 
     const io = getIo();
 
-    emitToUser(io, senderId, "message-seen", {
+    emitToUser(io, senderId, "messages-seen", {
       conversationId,
       messageIds: unreadMessages.map((message) => message._id),
       seenAt,

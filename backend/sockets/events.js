@@ -13,7 +13,7 @@ export const registerSocketEvents = (io, socket) => {
     }
 
     onlineUsers.get(id).add(socket.id);
-    console.log(onlineUsers);
+    // console.log(onlineUsers);
   });
 
   socket.on("disconnect", () => {
@@ -29,7 +29,7 @@ export const registerSocketEvents = (io, socket) => {
       onlineUsers.delete(socket.userId);
     }
 
-    console.log("Disconnected:", socket.id);
+    // console.log("Disconnected:", socket.id);
   });
 
   socket.on("typing", ({ receiverId }) => {
