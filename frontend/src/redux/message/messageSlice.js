@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   getMessages,
+  markSeenMessage as markConversationAsSeenService,
   sendMessage as sendMessageService,
 } from "../../services/messageService";
 const initialState = {
@@ -33,12 +34,46 @@ export const sendMessage = createAsyncThunk(
   },
 );
 
+export const markConversationAsSeen = createAsyncThunk(
+  "message/markConversationAsSeen",
+  async (conversationId, { rejectWithValue }) => {
+    try {
+      const response = await markConversationAsSeenService(conversationId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong",
+      );
+    }
+  },
+);
+
+const updateSeenMessages = (state, payload) => {
+  const { messageIds, seenAt } = payload;
+
+  const seenIds = new Set(messageIds);
+
+  state.messages.forEach((message) => {
+    if (seenIds.has(message._id)) {
+      message.isSeen = true;
+      message.seenAt = seenAt;
+    }
+  });
+};
+
 const messageSlice = createSlice({
   name: "message",
   initialState,
   reducers: {
     addMessage(state, action) {
       state.messages = state.messages.push(action.payload);
+    },
+    messagesSeen(state, action) {
+      updateSeenMessages(state, action.payload);
+    },
+
+    clearMessages: (state) => {
+      state.messages = [];
     },
   },
 
@@ -69,8 +104,22 @@ const messageSlice = createSlice({
       .addCase(sendMessage.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(markConversationAsSeen.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(markConversationAsSeen.fulfilled, (state, action) => {
+        state.loading = false;
+        updateSeenMessages(state, action.payload);
+      })
+      .addCase(markConversationAsSeen.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
+
+export const { addMessage, messagesSeen, clearMessages } = messageSlice.actions;
 
 export default messageSlice.reducer;

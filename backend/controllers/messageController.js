@@ -52,6 +52,10 @@ export const sendMessage = catchAsync(async (req, res, next) => {
 
   emitToUser(io, receiverId, "receive-message", message);
 
+  // Notify both users to refresh their conversation list
+  emitToUser(io, senderId, "conversation-updated");
+  emitToUser(io, receiverId, "conversation-updated");
+
   res.status(201).json({
     status: "success",
     data: message,
@@ -108,14 +112,45 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
 // export const seenMessage = catchAsync(async (req, res, next) => {
 //   const { messageId } = req.params;
 
-//   const message = await Message.findByIdAndUpdate(
-//     messageId,
-//     { isSeen: true },
-//     { runValidators: true, returnDocument: "after" },
-//   );
+//   const message = await Message.findById(messageId);
 
 //   if (!message) {
 //     return next(new AppError("Message not found", 404));
+//   }
+
+//   if (message.receiver.toString() !== req.user._id.toString()) {
+//     return next(
+//       new AppError("You are not eligible to mark this message as seen", 403),
+//     );
+//   }
+
+//   if (!message.isSeen) {
+//     await Message.updateMany(
+//       {
+//         conversationId: message.conversationId,
+//         receiver: req.user._id,
+//         sender: message.sender,
+//         isSeen: false,
+//       },
+//       {
+//         isSeen: true,
+//         seenAt: new Date(),
+//       },
+//     );
+
+//     message.isSeen = true;
+//     message.seenAt = new Date();
+//     await message.save();
+//   }
+
+//   const io = getIo();
+
+//   if (!message.isSeen) {
+//     emitToUser(io, message.sender, "message-seen", {
+//       conversationId: message.conversationId,
+//       messageId: message._id,
+//       seenAt: message.seenAt,
+//     });
 //   }
 
 //   res.status(200).json({
@@ -123,50 +158,3 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
 //     data: message,
 //   });
 // });
-
-export const seenMessage = catchAsync(async (req, res, next) => {
-  const { messageId } = req.params;
-
-  const message = await Message.findById(messageId);
-
-  if (!message) {
-    return next(new AppError("Message not found", 404));
-  }
-
-  if (message.receiver.toString() !== req.user._id.toString()) {
-    return next(
-      new AppError("You are not eligible to mark this message as seen", 403),
-    );
-  }
-
-  if (!message.isSeen) {
-    await Message.updateMany(
-      {
-        conversationId: message.conversationId,
-        receiver: req.user._id,
-        sender: message.sender,
-        isSeen: false,
-      },
-      {
-        isSeen: true,
-        seenAt: new Date(),
-      },
-    );
-
-    message.isSeen = true;
-    message.seenAt = new Date();
-    await message.save();
-  }
-
-  const io = getIo();
-  emitToUser(io, message.sender, "message-seen", {
-    conversationId: message.conversationId,
-    messageId: message._id,
-    seenAt: message.seenAt,
-  });
-
-  res.status(200).json({
-    status: "success",
-    data: message,
-  });
-});

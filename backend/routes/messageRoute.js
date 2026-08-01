@@ -3,7 +3,7 @@ import { protect } from "../controllers/authController.js";
 import {
   deleteMessage,
   getMessages,
-  seenMessage,
+  // seenMessage,
   sendMessage,
 } from "../controllers/messageController.js";
 
@@ -17,4 +17,4 @@ messageRoute.get("/:conversationId", getMessages);
 
 messageRoute.delete("/:messageId", deleteMessage);
 
-messageRoute.patch("/:messageId/seen", seenMessage);
+// messageRoute.patch("/:messageId/seen", seenMessage);

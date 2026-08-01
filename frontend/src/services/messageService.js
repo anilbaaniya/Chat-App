@@ -17,3 +17,12 @@ export const getMessages = async (conversationId) => {
     throw error;
   }
 };
+
+export const markSeenMessage = async (messageId) => {
+  try {
+    return api.patch(`/conversations/${messageId}/seen`);
+  } catch (error) {
+    if (error.response) throw error.response;
+    throw error;
+  }
+};

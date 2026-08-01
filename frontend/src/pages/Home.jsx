@@ -1,19 +1,16 @@
 import Sidebar from "../ui/Sidebar";
 import MessageContainer from "../ui/MessageContainer";
-import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchConversations } from "../redux/conversation/conversationSlice";
 
 export default function Home() {
-  const [conversations, setConversations] = useState([]);
-
   const dispatch = useDispatch();
+  const { conversations } = useSelector((state) => state.conversation);
 
   useEffect(() => {
     async function getConversation() {
-      const result = await dispatch(fetchConversations());
-      // console.log(result);
-      setConversations(result.payload.data);
+      dispatch(fetchConversations());
     }
     getConversation();
   }, [dispatch]);

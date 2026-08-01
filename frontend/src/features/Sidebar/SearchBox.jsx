@@ -3,10 +3,7 @@ import { IoPersonCircleSharp, IoSearchSharp } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUsers } from "../../redux/user/userSlice";
 import { fetchMessages } from "../../redux/message/messageSlice";
-import {
-  createConversation,
-  fetchConversations,
-} from "../../redux/conversation/conversationSlice";
+import { createConversation } from "../../redux/conversation/conversationSlice";
 
 export default function SearchBox() {
   const [search, setSearch] = useState("");
@@ -30,7 +27,6 @@ export default function SearchBox() {
 
       console.log(conversation);
       console.log(conversation.data._id);
-      await dispatch(fetchConversations()).unwrap();
 
       await dispatch(fetchMessages(conversation.data._id));
 
