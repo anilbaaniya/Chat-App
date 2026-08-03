@@ -3,6 +3,8 @@ import { AppError } from "../utils/appError.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import jwt, { decode } from "jsonwebtoken";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const signinToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -99,3 +101,41 @@ export const protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+export const changePassword = catchAsync(async (req, res, next) => {
+  const { currentPassword, password, confirmPassword } = req.body;
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user) {
+    return next(new AppError("No user found!", 404));
+  }
+
+  const isCorrectPassword = await user.correctPassword(
+    currentPassword,
+    user.password,
+  );
+
+  if (!isCorrectPassword) {
+    return next(new AppError("Current password is wrong!", 400));
+  }
+
+  user.password = password;
+  user.confirmPassword = confirmPassword;
+  await user.save();
+
+  createSendToken(user, 200, res);
+});
+
+export const logout = (req, res) => {
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    expires: new Date(0), // instantly expires
+    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Logged out successfully",
+  });
+};

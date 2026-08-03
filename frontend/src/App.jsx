@@ -3,9 +3,10 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import ProtectedLayout from "./ProtectedLayout";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { getCurrentUser } from "./redux/auth/authSlice";
+import UserProfile from "./pages/UserProfile";
 
 const router = createBrowserRouter([
   {
@@ -23,13 +24,17 @@ const router = createBrowserRouter([
         path: "/",
         element: <Home />,
       },
+      {
+        path: "/profile",
+        element: <UserProfile />,
+      },
     ],
   },
 ]);
 
 export default function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  // const { isAuthenticated } = useSelector((state) => state.auth);
   // console.log(isAuthenticated);
 
   useEffect(() => {

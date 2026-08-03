@@ -8,3 +8,12 @@ export const searchUser = async (search) => {
     throw error;
   }
 };
+
+export const updateUser = async (data) => {
+  try {
+    return api.patch(`/users/updateMe`, data);
+  } catch (error) {
+    if (error.response) throw error.response;
+    throw error;
+  }
+};

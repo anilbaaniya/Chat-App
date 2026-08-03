@@ -30,7 +30,7 @@ const conversationSchema = new mongoose.Schema(
     unreadCount: {
       type: Map,
       of: Number,
-      default: {},
+      default: () => new Map(),
     },
   },
   { timestamps: true },

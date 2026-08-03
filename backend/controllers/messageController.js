@@ -46,6 +46,20 @@ export const sendMessage = catchAsync(async (req, res, next) => {
   conversation.lastMessageSender = req.user._id;
   conversation.lastMessageAt = message.createdAt;
 
+  if (!(conversation.unreadCount instanceof Map)) {
+    conversation.unreadCount = new Map(
+      Object.entries(conversation.unreadCount || {}),
+    );
+  }
+
+  const receiverUnread =
+    conversation.unreadCount.get(receiverId.toString()) || 0;
+
+  conversation.unreadCount.set(receiverId.toString(), receiverUnread + 1);
+
+  // Sender should never have unread messages in this conversation
+  conversation.unreadCount.set(senderId.toString(), 0);
+
   await conversation.save();
 
   const io = getIo();
@@ -54,7 +68,14 @@ export const sendMessage = catchAsync(async (req, res, next) => {
 
   // Notify both users to refresh their conversation list
   emitToUser(io, senderId, "conversation-updated");
-  emitToUser(io, receiverId, "conversation-updated");
+
+  emitToUser(io, receiverId.toString(), "conversation-updated");
+
+  emitToUser(io, receiverId.toString(), "unreadMessages-updated", {
+    conversationId: conversation._id,
+    lastMessage: message,
+    unreadCount: conversation.unreadCount.get(receiverId.toString()),
+  });
 
   res.status(201).json({
     status: "success",
@@ -108,53 +129,3 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
     data: "Message deleted successfully",
   });
 });
-
-// export const seenMessage = catchAsync(async (req, res, next) => {
-//   const { messageId } = req.params;
-
-//   const message = await Message.findById(messageId);
-
-//   if (!message) {
-//     return next(new AppError("Message not found", 404));
-//   }
-
-//   if (message.receiver.toString() !== req.user._id.toString()) {
-//     return next(
-//       new AppError("You are not eligible to mark this message as seen", 403),
-//     );
-//   }
-
-//   if (!message.isSeen) {
-//     await Message.updateMany(
-//       {
-//         conversationId: message.conversationId,
-//         receiver: req.user._id,
-//         sender: message.sender,
-//         isSeen: false,
-//       },
-//       {
-//         isSeen: true,
-//         seenAt: new Date(),
-//       },
-//     );
-
-//     message.isSeen = true;
-//     message.seenAt = new Date();
-//     await message.save();
-//   }
-
-//   const io = getIo();
-
-//   if (!message.isSeen) {
-//     emitToUser(io, message.sender, "message-seen", {
-//       conversationId: message.conversationId,
-//       messageId: message._id,
-//       seenAt: message.seenAt,
-//     });
-//   }
-
-//   res.status(200).json({
-//     status: "success",
-//     data: message,
-//   });
-// });

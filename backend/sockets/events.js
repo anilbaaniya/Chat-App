@@ -14,6 +14,8 @@ export const registerSocketEvents = (io, socket) => {
 
     onlineUsers.get(id).add(socket.id);
     // console.log(onlineUsers);
+    // broadcast updated online users list to all connected clients
+    io.emit("online-users", Array.from(onlineUsers.keys()));
   });
 
   socket.on("disconnect", () => {
@@ -29,14 +31,23 @@ export const registerSocketEvents = (io, socket) => {
       onlineUsers.delete(socket.userId);
     }
 
+    // broadcast updated online users list to all connected clients
+    io.emit("online-users", Array.from(onlineUsers.keys()));
+
     // console.log("Disconnected:", socket.id);
   });
 
-  socket.on("typing", ({ receiverId }) => {
-    emitToUser(io, receiverId, "typing", { senderId: socket.userId });
+  socket.on("typing", ({ receiverId, conversationId }) => {
+    emitToUser(io, receiverId, "typing", {
+      senderId: socket.userId,
+      conversationId,
+    });
   });
 
-  socket.on("stop-typing", ({ receiverId }) => {
-    emitToUser(io, receiverId, "stop-typing", { senderId: socket.userId });
+  socket.on("stop-typing", ({ receiverId, conversationId }) => {
+    emitToUser(io, receiverId, "stop-typing", {
+      senderId: socket.userId,
+      conversationId,
+    });
   });
 };

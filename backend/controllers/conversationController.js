@@ -79,6 +79,11 @@ export const getConversations = catchAsync(async (req, res, next) => {
       (participant) => participant._id.toString() !== req.user._id.toString(),
     );
 
+    const unreadCountMap =
+      conversation.unreadCount instanceof Map
+        ? conversation.unreadCount
+        : new Map(Object.entries(conversation.unreadCount || {}));
+
     return {
       _id: conversation._id,
 
@@ -88,7 +93,7 @@ export const getConversations = catchAsync(async (req, res, next) => {
 
       lastMessageAt: conversation.lastMessageAt,
 
-      unreadCount: conversation.unreadCount?.[req.user._id.toString()] ?? 0,
+      unreadCount: unreadCountMap.get(req.user._id.toString()) ?? 0,
 
       updatedAt: conversation.updatedAt,
 
@@ -102,82 +107,6 @@ export const getConversations = catchAsync(async (req, res, next) => {
     data: formattedConversations,
   });
 });
-
-// export const markConversationAsSeen = catchAsync(async (req, res, next) => {
-//   const { conversationId } = req.params;
-
-//   // 1. Check conversation exists
-//   const conversation = await Conversation.findById(conversationId);
-
-//   if (!conversation) {
-//     return next(new AppError("Conversation not found", 404));
-//   }
-
-//   // 2. Check current user is participant
-//   const isParticipant = conversation.participants.some(
-//     (participant) => participant.toString() === req.user._id.toString(),
-//   );
-
-//   if (!isParticipant) {
-//     return next(
-//       new AppError("You are not allowed to access this conversation", 403),
-//     );
-//   }
-
-//   // 3. Find unread messages received by current user
-//   const unreadMessages = await Message.find({
-//     conversationId,
-//     receiver: req.user._id,
-//     isSeen: false,
-//   }).select("_id sender");
-
-//   if (unreadMessages.length === 0) {
-//     return res.status(200).json({
-//       status: "success",
-//       message: "No unread messages",
-//     });
-//   }
-
-//   const seenAt = new Date();
-
-//   // 4. Mark all as seen
-//   await Message.updateMany(
-//     {
-//       conversationId,
-//       receiver: req.user._id,
-//       isSeen: false,
-//     },
-//     {
-//       $set: {
-//         isSeen: true,
-//         seenAt,
-//       },
-//     },
-//   );
-
-//   // 5. In one-to-one chat, all unread messages have the same sender
-//   const senderId = unreadMessages[0].sender.toString();
-
-//   // 6. Notify sender
-//   const io = getIo();
-
-//   emitToUser(io, senderId, "messages-seen", {
-//     conversationId,
-//     messageIds: unreadMessages.map((msg) => msg._id),
-//     seenAt,
-//   });
-
-//   // 7. Response
-//   res.status(200).json({
-//     status: "success",
-//     message: "Messages marked as seen",
-//     data: {
-//       conversationId,
-//       messageIds: unreadMessages.map((msg) => msg._id),
-//       seenAt,
-//     },
-//   });
-// });
 
 export const markConversationAsSeen = catchAsync(async (req, res, next) => {
   const { conversationId } = req.params;
@@ -213,6 +142,12 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
 
   const seenAt = new Date();
 
+  if (!(conversation.unreadCount instanceof Map)) {
+    conversation.unreadCount = new Map(
+      Object.entries(conversation.unreadCount || {}),
+    );
+  }
+
   const result = await Message.updateMany(
     {
       conversationId,
@@ -226,6 +161,9 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
       },
     },
   );
+  conversation.unreadCount.set(req.user._id.toString(), 0);
+
+  await conversation.save();
 
   if (result.modifiedCount > 0) {
     const senderId = unreadMessages[0].sender.toString();
@@ -237,6 +175,11 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
       messageIds: unreadMessages.map((message) => message._id),
       seenAt,
     });
+
+    emitToUser(io, req.user._id.toString(), "unreadMessages-updated", {
+      conversationId,
+      unreadCount: 0,
+    });
   }
 
   res.status(200).json({
@@ -245,6 +188,7 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
       conversationId,
       messageIds: unreadMessages.map((message) => message._id),
       seenAt,
+      unreadCount: 0,
     },
   });
 });

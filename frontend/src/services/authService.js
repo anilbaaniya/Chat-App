@@ -18,6 +18,24 @@ export const login = async (data) => {
   }
 };
 
+export const changePassword = async (data) => {
+  try {
+    return api.patch("/users/updatePassword", data);
+  } catch (error) {
+    if (error.response) throw error.response;
+    throw error;
+  }
+};
+
+export const logout = async () => {
+  try {
+    return api.post("/users/logout", {});
+  } catch (error) {
+    if (error.response) throw error.response;
+    throw error;
+  }
+};
+
 export const getMe = async () => {
   try {
     return api.get("/users/getMe");

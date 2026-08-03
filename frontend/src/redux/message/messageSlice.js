@@ -7,6 +7,7 @@ import {
 const initialState = {
   messages: [],
   loading: false,
+
   error: null,
 };
 

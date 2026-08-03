@@ -1,8 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
+  changePassword,
   createUser,
   getMe,
   login as loginService,
+  logout as logoutService,
 } from "../../services/authService";
 
 const initialState = {
@@ -33,6 +35,35 @@ export const signupUser = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(error.data?.message || "Signup failed!");
+    }
+  },
+);
+
+export const updatePassword = createAsyncThunk(
+  "auth/updatePassword",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await changePassword(data);
+      return response.data;
+    } catch (error) {
+      const message =
+        error?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Password update failed!";
+      return rejectWithValue(message);
+    }
+  },
+);
+
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await logoutService();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.data?.message || "Logout failed!");
     }
   },
 );
@@ -93,6 +124,34 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.rejected, (state) => {
         state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+      })
+      .addCase(updatePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePassword.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
         state.user = null;
         state.isAuthenticated = false;
       });

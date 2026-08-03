@@ -14,17 +14,35 @@ import { useEffect } from "react";
 import { socket } from "../../socket/socket";
 import { useRef } from "react";
 import { formatConversationTime } from "../../utils/formatConversationTIme";
+import {
+  typingStarted,
+  typingStopped,
+} from "../../redux/conversation/conversationSlice";
 
 export default function Message() {
   const [text, setText] = useState("");
+
+  const typingTimeoutRef = useRef(null);
+  const isTypingRef = useRef(false);
+
   const messagesEndRef = useRef(null);
 
   const dispatch = useDispatch();
 
   const { messages } = useSelector((state) => state.message);
-  console.log(messages);
+  // console.log(messages);
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { user } = useSelector((state) => state.auth);
+
+  const { onlineUsers } = useSelector((state) => state.presence);
+
+  const isTyping = useSelector(
+    (state) =>
+      state.conversation.typingConversations?.[selectedConversation?._id] ??
+      false,
+  );
+
+  const isOnline = onlineUsers.includes(selectedConversation?.user._id);
 
   useEffect(() => {
     if (!selectedConversation) return;
@@ -53,6 +71,7 @@ export default function Message() {
       // Only add the message if it belongs to the currently opened conversation
       if (message.conversationId === selectedConversation?._id) {
         dispatch(addMessage(message));
+        dispatch(markConversationAsSeen(message.conversationId));
       }
     };
 
@@ -83,30 +102,83 @@ export default function Message() {
     };
   }, [dispatch, selectedConversation]);
 
+  useEffect(() => {
+    const handleTyping = ({ conversationId }) => {
+      dispatch(typingStarted({ conversationId }));
+    };
+
+    const handleStopTyping = ({ conversationId }) => {
+      dispatch(typingStopped({ conversationId }));
+    };
+
+    socket.on("typing", handleTyping);
+    socket.on("stop-typing", handleStopTyping);
+
+    return () => {
+      socket.off("typing", handleTyping);
+      socket.off("stop-typing", handleStopTyping);
+    };
+  }, [dispatch, selectedConversation]);
+
   if (!selectedConversation) {
     return <EmptyChat />;
   }
 
-  // const formatTime = (date) => {
-  //   return new Date(date).toLocaleTimeString([], {
-  //     hour: "numeric",
-  //     minute: "2-digit",
-  //   });
-  // };
-
   function handleSendMessage() {
     if (!text.trim()) return;
+
+    // Stop typing immediately
+    clearTimeout(typingTimeoutRef.current);
+
+    if (isTypingRef.current) {
+      socket.emit("stop-typing", {
+        conversationId: selectedConversation._id,
+        receiverId: selectedConversation.user._id,
+      });
+
+      isTypingRef.current = false;
+    }
 
     const messageOptions = {
       conversationId: selectedConversation._id,
       receiverId: selectedConversation.user._id,
       messageType: "text",
-      text,
+      text: text.trim(),
     };
 
     dispatch(sendMessage(messageOptions));
+
     setText("");
   }
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setText(value);
+
+    if (!selectedConversation) return;
+
+    // User started typing
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+
+      socket.emit("typing", {
+        conversationId: selectedConversation._id,
+        receiverId: selectedConversation.user._id,
+      });
+    }
+
+    // Reset timer
+    clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+
+      socket.emit("stop-typing", {
+        conversationId: selectedConversation._id,
+        receiverId: selectedConversation.user._id,
+      });
+    }, 1000);
+  };
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
@@ -120,7 +192,17 @@ export default function Message() {
               {selectedConversation.user.name}
             </h2>
 
-            <p className="text-sm text-green-600">● Online</p>
+            <p
+              className={`text-sm ${
+                isTyping
+                  ? "text-green-600"
+                  : isOnline
+                    ? "text-green-600"
+                    : "text-gray-500"
+              }`}
+            >
+              {isTyping ? "Typing..." : isOnline ? "● Online" : "Offline"}
+            </p>
           </div>
         </div>
       </div>
@@ -210,7 +292,7 @@ export default function Message() {
           <input
             type="text"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleSendMessage();

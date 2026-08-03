@@ -5,6 +5,7 @@ import { createConversation as createConversationService } from "../../services/
 const initialState = {
   conversations: [],
   selectedConversation: null,
+  typingConversations: {},
   loading: false,
   error: null,
 };
@@ -44,6 +45,32 @@ const conversationSlice = createSlice({
   reducers: {
     setSelectedConversation(state, action) {
       state.selectedConversation = action.payload;
+    },
+    typingStarted(state, action) {
+      state.typingConversations[action.payload.conversationId] = true;
+    },
+
+    typingStopped(state, action) {
+      state.typingConversations[action.payload.conversationId] = false;
+    },
+
+    updateConversation(state, action) {
+      const { conversationId, unreadCount, lastMessage } = action.payload;
+
+      const conversation = state.conversations.find(
+        (c) => c._id === conversationId,
+      );
+
+      if (!conversation) return;
+
+      if (lastMessage) {
+        conversation.lastMessage = lastMessage;
+        conversation.lastMessageAt = lastMessage.createdAt;
+      }
+
+      if (unreadCount !== undefined) {
+        conversation.unreadCount = unreadCount;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -85,6 +112,11 @@ const conversationSlice = createSlice({
   },
 });
 
-export const { setSelectedConversation } = conversationSlice.actions;
+export const {
+  setSelectedConversation,
+  typingStarted,
+  typingStopped,
+  updateConversation,
+} = conversationSlice.actions;
 
 export default conversationSlice.reducer;
