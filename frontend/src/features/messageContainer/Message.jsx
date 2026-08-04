@@ -1,124 +1,35 @@
-import { IoPersonCircleSharp, IoSend, IoAttach } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
-import { MdDoneAll } from "react-icons/md";
-
 import EmptyChat from "./EmptyChat";
-import { useState } from "react";
 import {
-  addMessage,
   markConversationAsSeen,
-  messagesSeen,
   sendMessage,
 } from "../../redux/message/messageSlice";
 import { useEffect } from "react";
-import { socket } from "../../socket/socket";
-import { useRef } from "react";
-import { formatConversationTime } from "../../utils/formatConversationTIme";
-import {
-  typingStarted,
-  typingStopped,
-} from "../../redux/conversation/conversationSlice";
+import MessageHeader from "./MessageHeader";
+import MessageInput from "./MessageInput";
+import MessageSection from "./MessageSection";
+import useMessageSocket from "../../hooks/useMessageSocket";
+import useTyping from "../../hooks/useTyping";
+import useAutoScroll from "../../hooks/useAutoScroll";
 
 export default function Message() {
-  const [text, setText] = useState("");
-
-  const typingTimeoutRef = useRef(null);
-  const isTypingRef = useRef(false);
-
-  const messagesEndRef = useRef(null);
-
   const dispatch = useDispatch();
 
   const { messages } = useSelector((state) => state.message);
-  // console.log(messages);
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { user } = useSelector((state) => state.auth);
 
-  const { onlineUsers } = useSelector((state) => state.presence);
+  const { text, setText, handleInputChange, stopTyping } =
+    useTyping(selectedConversation);
 
-  const isTyping = useSelector(
-    (state) =>
-      state.conversation.typingConversations?.[selectedConversation?._id] ??
-      false,
-  );
-
-  const isOnline = onlineUsers.includes(selectedConversation?.user._id);
+  useMessageSocket(selectedConversation?._id);
+  const messagesEndRef = useAutoScroll(messages, selectedConversation?._id);
 
   useEffect(() => {
     if (!selectedConversation) return;
 
     dispatch(markConversationAsSeen(selectedConversation._id));
   }, [selectedConversation?._id, selectedConversation, dispatch]);
-
-  // Instantly scroll to bottom when opening a conversation
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "auto",
-      block: "end",
-    });
-  }, [selectedConversation?._id]);
-
-  // Smoothly scroll when a new message is added
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  }, [messages]);
-
-  useEffect(() => {
-    const handleReceiveMessage = (message) => {
-      // Only add the message if it belongs to the currently opened conversation
-      if (message.conversationId === selectedConversation?._id) {
-        dispatch(addMessage(message));
-        dispatch(markConversationAsSeen(message.conversationId));
-      }
-    };
-
-    socket.on("receive-message", handleReceiveMessage);
-
-    return () => {
-      socket.off("receive-message", handleReceiveMessage);
-    };
-  }, [dispatch, selectedConversation]);
-
-  useEffect(() => {
-    const handleMessagesSeen = ({ conversationId, messageIds, seenAt }) => {
-      // Ignore events for other conversations
-      if (conversationId !== selectedConversation?._id) return;
-
-      dispatch(
-        messagesSeen({
-          messageIds,
-          seenAt,
-        }),
-      );
-    };
-
-    socket.on("messages-seen", handleMessagesSeen);
-
-    return () => {
-      socket.off("messages-seen", handleMessagesSeen);
-    };
-  }, [dispatch, selectedConversation]);
-
-  useEffect(() => {
-    const handleTyping = ({ conversationId }) => {
-      dispatch(typingStarted({ conversationId }));
-    };
-
-    const handleStopTyping = ({ conversationId }) => {
-      dispatch(typingStopped({ conversationId }));
-    };
-
-    socket.on("typing", handleTyping);
-    socket.on("stop-typing", handleStopTyping);
-
-    return () => {
-      socket.off("typing", handleTyping);
-      socket.off("stop-typing", handleStopTyping);
-    };
-  }, [dispatch, selectedConversation]);
 
   if (!selectedConversation) {
     return <EmptyChat />;
@@ -128,16 +39,7 @@ export default function Message() {
     if (!text.trim()) return;
 
     // Stop typing immediately
-    clearTimeout(typingTimeoutRef.current);
-
-    if (isTypingRef.current) {
-      socket.emit("stop-typing", {
-        conversationId: selectedConversation._id,
-        receiverId: selectedConversation.user._id,
-      });
-
-      isTypingRef.current = false;
-    }
+    stopTyping();
 
     const messageOptions = {
       conversationId: selectedConversation._id,
@@ -151,165 +53,25 @@ export default function Message() {
     setText("");
   }
 
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setText(value);
-
-    if (!selectedConversation) return;
-
-    // User started typing
-    if (!isTypingRef.current) {
-      isTypingRef.current = true;
-
-      socket.emit("typing", {
-        conversationId: selectedConversation._id,
-        receiverId: selectedConversation.user._id,
-      });
-    }
-
-    // Reset timer
-    clearTimeout(typingTimeoutRef.current);
-
-    typingTimeoutRef.current = setTimeout(() => {
-      isTypingRef.current = false;
-
-      socket.emit("stop-typing", {
-        conversationId: selectedConversation._id,
-        receiverId: selectedConversation.user._id,
-      });
-    }, 1000);
-  };
-
   return (
     <div className="flex h-screen flex-col bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <IoPersonCircleSharp className="text-5xl text-gray-400" />
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800">
-              {selectedConversation.user.name}
-            </h2>
-
-            <p
-              className={`text-sm ${
-                isTyping
-                  ? "text-green-600"
-                  : isOnline
-                    ? "text-green-600"
-                    : "text-gray-500"
-              }`}
-            >
-              {isTyping ? "Typing..." : isOnline ? "● Online" : "Offline"}
-            </p>
-          </div>
-        </div>
-      </div>
+      <MessageHeader />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.map((message) => {
-          const senderId =
-            typeof message.sender === "string"
-              ? message.sender
-              : message.sender?._id;
-
-          const isMyMessage = senderId === user._id;
-
-          return (
-            <div
-              key={message._id}
-              className={`flex ${
-                isMyMessage ? "justify-end" : "justify-start"
-              }`}
-            >
-              {!isMyMessage && (
-                <IoPersonCircleSharp className="mr-2 mt-1 text-3xl text-gray-400" />
-              )}
-
-              <div
-                className={`max-w-xs lg:max-w-md rounded-2xl px-4 py-3 shadow ${
-                  isMyMessage
-                    ? "bg-indigo-500 text-white rounded-br-md"
-                    : "bg-white text-gray-800 rounded-bl-md"
-                }`}
-              >
-                {message.messageType === "text" && <p>{message.text}</p>}
-
-                {message.messageType === "image" && (
-                  <img
-                    src={message.image}
-                    alt="Message"
-                    className="max-h-64 rounded-lg"
-                  />
-                )}
-
-                {message.messageType === "file" && (
-                  <a
-                    href={message.file}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`underline ${
-                      isMyMessage ? "text-blue-100" : "text-blue-600"
-                    }`}
-                  >
-                    View File
-                  </a>
-                )}
-
-                <div
-                  className={`mt-1 text-right text-xs ${
-                    isMyMessage ? "text-blue-100" : "text-gray-500"
-                  }`}
-                >
-                  <span>{formatConversationTime(message.createdAt)}</span>
-                  {isMyMessage && (
-                    <MdDoneAll
-                      size={18}
-                      className={
-                        message.isSeen ? "text-sky-400" : "text-gray-300"
-                      }
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Auto-scroll target */}
-        <div ref={messagesEndRef} />
-      </div>
+      <MessageSection
+        messages={messages}
+        user={user}
+        messagesEndRef={messagesEndRef}
+      />
 
       {/* Input */}
-      <div className="border-t border-gray-200 bg-white px-6 py-4">
-        <div className="flex items-center gap-3 rounded-full border border-gray-300 px-4 py-2">
-          <button className="cursor-pointer text-gray-500 hover:text-blue-300">
-            <IoAttach className="text-xl" />
-          </button>
-
-          <input
-            type="text"
-            value={text}
-            onChange={handleInputChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSendMessage();
-              }
-            }}
-            placeholder="Type a message..."
-            className="flex-1 bg-transparent outline-none"
-          />
-
-          <button
-            onClick={handleSendMessage}
-            className="cursor-pointer rounded-full bg-indigo-500 p-2 text-white transition hover:bg-indigo-700"
-          >
-            <IoSend />
-          </button>
-        </div>
-      </div>
+      <MessageInput
+        text={text}
+        handleInputChange={handleInputChange}
+        handleSendMessage={handleSendMessage}
+      />
     </div>
   );
 }

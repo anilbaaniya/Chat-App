@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginUser } from "../redux/auth/authSlice";
+import { IoChatboxEllipses } from "react-icons/io5";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,10 +23,17 @@ export default function Login() {
   };
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black">
-      <div className="w-full max-w-md p-8 border border-gray-200 rounded-lg shadow-sm">
+      <div className="w-full max-w-md p-8 rounded-2xl border border-gray-100 shadow-xl">
         {/* Title */}
-        <h2 className="text-2xl font-bold text-center mb-6">
-          Login to Your Account
+        <div className="flex items-center justify-center gap-4 mb-5">
+          <div className="flex items-center justify-center w-12 h-11 rounded-xl  bg-linear-to-r from-blue-500 to-indigo-600 shadow-lg">
+            <IoChatboxEllipses className="text-white text-3xl" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-800">ChatApp</h1>
+        </div>
+        <h2 className="text-2xl font-semibold text-center mb-6">
+          Welcome Back 👋
         </h2>
 
         {/* Form */}
