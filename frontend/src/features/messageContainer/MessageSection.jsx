@@ -2,9 +2,16 @@ import { MdDoneAll } from "react-icons/md";
 import { formatConversationTime } from "../../utils/formatConversationTIme";
 import { IoPersonCircleSharp } from "react-icons/io5";
 
-export default function MessageSection({ messages, user, messagesEndRef }) {
+export default function MessageSection({
+  messages,
+  user,
+  messagesEndRef,
+  scrollToBottom,
+}) {
+  console.log(messages[messages.length - 1]);
+  // console.log(messages);
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
       {messages.map((message) => {
         const senderId =
           typeof message.sender === "string"
@@ -25,7 +32,7 @@ export default function MessageSection({ messages, user, messagesEndRef }) {
             <div
               className={`max-w-xs lg:max-w-md rounded-2xl px-4 py-3 shadow ${
                 isMyMessage
-                  ? "bg-indigo-500 text-white rounded-br-md"
+                  ? ` ${message.messageType == "image" || message.messageType == "video" ? " bg-gray-50 text-black" : "bg-indigo-500 text-white"}  rounded-br-md`
                   : "bg-white text-gray-800 rounded-bl-md"
               }`}
             >
@@ -36,6 +43,15 @@ export default function MessageSection({ messages, user, messagesEndRef }) {
                   src={message.image}
                   alt="Message"
                   className="max-h-64 rounded-lg"
+                  onLoad={scrollToBottom}
+                />
+              )}
+              {message.messageType === "video" && (
+                <video
+                  src={message.video}
+                  controls
+                  className="max-h-64 rounded-lg"
+                  onLoadedData={scrollToBottom}
                 />
               )}
 
@@ -48,13 +64,15 @@ export default function MessageSection({ messages, user, messagesEndRef }) {
                     isMyMessage ? "text-blue-100" : "text-blue-600"
                   }`}
                 >
-                  View File
+                  {message.text}
                 </a>
               )}
 
               <div
                 className={`mt-1 text-right text-xs ${
-                  isMyMessage ? "text-blue-100" : "text-gray-500"
+                  isMyMessage
+                    ? `${message.messageType == "image" || message.messageType == "video" ? "text-black" : "text-blue-100"}`
+                    : "text-gray-500"
                 }`}
               >
                 <span>{formatConversationTime(message.createdAt)}</span>

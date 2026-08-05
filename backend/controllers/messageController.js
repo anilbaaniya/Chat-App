@@ -7,7 +7,7 @@ import { emitToUser } from "../sockets/emit.js";
 
 export const sendMessage = catchAsync(async (req, res, next) => {
   const senderId = req.user._id;
-  const { receiverId, text, image, file, messageType } = req.body;
+  const { receiverId, text, image, file, messageType, video } = req.body;
 
   // find existing conversation
   let conversation = await Conversation.findOne({
@@ -31,6 +31,7 @@ export const sendMessage = catchAsync(async (req, res, next) => {
     text,
     image,
     file,
+    video,
     messageType,
   });
 

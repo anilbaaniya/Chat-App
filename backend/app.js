@@ -8,6 +8,7 @@ import { globalErrorHandler } from "./controllers/errorController.js";
 import { userRoute } from "./routes/userRoute.js";
 import { conversationRoute } from "./routes/conversationRoute.js";
 import { messageRoute } from "./routes/messageRoute.js";
+import { signRoute } from "./routes/signRoute.js";
 
 export const app = express();
 
@@ -20,12 +21,12 @@ app.use(
   }),
 );
 
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-  }),
-);
+// app.use(
+//   rateLimit({
+//     windowMs: 10 * 60 * 1000,
+//     max: 1000,
+//   }),
+// );
 
 app.use(express.json());
 
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/conversations", conversationRoute);
 app.use("/api/v1/messages", messageRoute);
+app.use("/api/v1/generateSignature", signRoute);
 
 // global error handler
 app.use(globalErrorHandler);

@@ -18,6 +18,30 @@ export default function MessageList({ conversation }) {
       dispatch(fetchMessages(conversation._id));
     }
   }
+  let lastMessage = "Start a conversation";
+
+  if (conversation.lastMessage) {
+    if (conversation.lastMessage.text) {
+      lastMessage = conversation.lastMessage.text;
+    } else {
+      switch (conversation.lastMessage.messageType) {
+        case "image":
+          lastMessage = "📷 Photo";
+          break;
+
+        case "video":
+          lastMessage = "🎥 Video";
+          break;
+
+        case "file":
+          lastMessage = "📄 File";
+          break;
+
+        default:
+          lastMessage = "Message";
+      }
+    }
+  }
   return (
     <div
       onClick={handleClick}
@@ -35,7 +59,7 @@ export default function MessageList({ conversation }) {
             <span className="text-green-500 font-bold truncate">typing...</span>
           ) : (
             <span className="text-gray-500 text-sm truncate">
-              {conversation.lastMessage?.text || "Start a conversation"}
+              {lastMessage}
             </span>
           )}
         </div>

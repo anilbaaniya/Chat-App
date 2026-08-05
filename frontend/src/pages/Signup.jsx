@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signupUser } from "../redux/auth/authSlice";
 import { IoChatboxEllipses } from "react-icons/io5";
@@ -9,6 +9,7 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { error } = useSelector((state) => state.auth);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function Signup() {
             />
           </div>
 
-          {/* <p className="text-red-600 text-sm pl-4">{error}</p> */}
+          <p className="text-red-600 text-sm pl-4">{error}</p>
 
           {/* Button */}
           <button

@@ -2,7 +2,7 @@ import api from "./api";
 
 export const sendMessage = async (data) => {
   try {
-    return api.post("/messages/", data);
+    return await api.post("/messages/", data);
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -11,7 +11,7 @@ export const sendMessage = async (data) => {
 
 export const getMessages = async (conversationId) => {
   try {
-    return api.get(`/messages/${conversationId}`);
+    return await api.get(`/messages/${conversationId}`);
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -20,7 +20,7 @@ export const getMessages = async (conversationId) => {
 
 export const markSeenMessage = async (messageId) => {
   try {
-    return api.patch(`/conversations/${messageId}/seen`);
+    return await api.patch(`/conversations/${messageId}/seen`);
   } catch (error) {
     if (error.response) throw error.response;
     throw error;

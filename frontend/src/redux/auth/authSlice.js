@@ -22,6 +22,7 @@ export const loginUser = createAsyncThunk(
       // console.log(response);
       return response.data;
     } catch (error) {
+      console.log(error.data.message);
       return rejectWithValue(error.data?.message || "Login failed!");
     }
   },
@@ -34,6 +35,7 @@ export const signupUser = createAsyncThunk(
       const response = await createUser(userData);
       return response.data;
     } catch (error) {
+      console.log(error.data);
       return rejectWithValue(error.data?.message || "Signup failed!");
     }
   },

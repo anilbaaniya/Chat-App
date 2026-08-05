@@ -1,23 +1,28 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 export default function useAutoScroll(messages, conversationId) {
   const messagesEndRef = useRef(null);
 
-  // Instantly scroll to bottom when opening a conversation
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!conversationId) return;
+
     messagesEndRef.current?.scrollIntoView({
       behavior: "auto",
       block: "end",
     });
   }, [conversationId]);
 
-  // Smoothly scroll when a new message is added
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  }, [messages]);
+    const frame = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(frame);
+  }, [messages.length, scrollToBottom]);
 
-  return messagesEndRef;
+  return { messagesEndRef, scrollToBottom };
 }

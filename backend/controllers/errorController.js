@@ -1,5 +1,26 @@
 import { AppError } from "../utils/appError.js";
 
+// If field value is duplicate
+const handleDuplicateFieldsDB = (error) => {
+  const value = error.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+  const message = `Duplicate field value: ${value}. Please use another value.`;
+  return new AppError(message, 400);
+};
+
+// if data is provided in invalid format
+const handleCastErrorDB = (error) => {
+  const message = `Invalid ${error.path}: ${error.value}`;
+  return new AppError(message, 400);
+};
+
+// Mongoose Validation error
+const handleValidationErrorDB = (error) => {
+  const errors = Object.values(error.errors).map((el) => el.message);
+  console.log(errors);
+  const message = `Invalid input: ${errors.join(". ")}`;
+  return new AppError(message, 400);
+};
+
 const sendDevError = (err, res) => {
   res.status(err.statusCode).json({
     status: err.status,
@@ -31,8 +52,17 @@ export const globalErrorHandler = (err, req, res, next) => {
   err.status = err.status || "error";
 
   if (process.env.NODE_ENV === "development") {
+    // console.log(err);
     sendDevError(err, res);
   } else if (process.env.NODE_ENV === "production") {
-    sendProdError(err, res);
+    let error = err;
+
+    if (error.name === "CastError") error = handleCastErrorDB(error);
+
+    if (error.code == 11000) error = handleDuplicateFieldsDB(error);
+
+    if (error.name === "ValidationError")
+      error = handleValidationErrorDB(error);
+    sendProdError(error, res);
   }
 };

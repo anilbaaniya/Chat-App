@@ -2,7 +2,7 @@ import api from "./api.js";
 
 export const createUser = async (data) => {
   try {
-    return api.post("/users/signup", data);
+    return await api.post("/users/signup", data);
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -11,8 +11,10 @@ export const createUser = async (data) => {
 
 export const login = async (data) => {
   try {
-    return api.post("/users/login", data);
+    const response = await api.post("/users/login", data);
+    return response;
   } catch (error) {
+    console.log(error.response);
     if (error.response) throw error.response;
     throw error;
   }
@@ -20,7 +22,7 @@ export const login = async (data) => {
 
 export const changePassword = async (data) => {
   try {
-    return api.patch("/users/updatePassword", data);
+    return await api.patch("/users/updatePassword", data);
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -29,7 +31,7 @@ export const changePassword = async (data) => {
 
 export const logout = async () => {
   try {
-    return api.post("/users/logout", {});
+    return await api.post("/users/logout", {});
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -38,7 +40,7 @@ export const logout = async () => {
 
 export const getMe = async () => {
   try {
-    return api.get("/users/getMe");
+    return await api.get("/users/getMe");
   } catch (error) {
     if (error.response) throw error.response;
     throw error;

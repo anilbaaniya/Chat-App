@@ -2,7 +2,7 @@ import api from "./api";
 
 export const getConversations = async () => {
   try {
-    return api.get("/conversations/");
+    return await api.get("/conversations/");
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
@@ -12,7 +12,7 @@ export const getConversations = async () => {
 export const createConversation = async (receiverId) => {
   console.log(receiverId);
   try {
-    return api.post("/conversations/", { receiverId });
+    return await api.post("/conversations/", { receiverId });
   } catch (error) {
     if (error.response) throw error.response;
     throw error;
