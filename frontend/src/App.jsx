@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { getCurrentUser } from "./redux/auth/authSlice";
 import UserProfile from "./pages/UserProfile";
+import OtherProfile from "./pages/OtherProfile";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <UserProfile />,
+      },
+      {
+        path: "/otherProfile",
+        element: <OtherProfile />,
       },
     ],
   },

@@ -1,8 +1,11 @@
-import { IoPersonCircleSharp } from "react-icons/io5";
+import { IoPersonCircle } from "react-icons/io5";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 export default function MessageHeader() {
+  const navigate = useNavigate();
   const { selectedConversation } = useSelector((state) => state.conversation);
+
   //   const { user } = useSelector((state) => state.auth);
 
   const { onlineUsers } = useSelector((state) => state.presence);
@@ -16,8 +19,19 @@ export default function MessageHeader() {
 
   return (
     <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <IoPersonCircleSharp className="text-5xl text-gray-400" />
+      <div
+        onClick={() => navigate("/otherProfile")}
+        className="flex items-center gap-2 cursor-pointer"
+      >
+        {selectedConversation.user?.profilePicture ? (
+          <img
+            src={selectedConversation.user.profilePicture}
+            alt={selectedConversation.user.name}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <IoPersonCircle className="w-10 h-10 text-gray-400" />
+        )}
 
         <div>
           <h2 className="text-lg font-semibold text-gray-800">

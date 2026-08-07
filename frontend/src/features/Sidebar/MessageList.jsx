@@ -1,11 +1,15 @@
-import { IoPersonCircleSharp } from "react-icons/io5";
+import { IoPersonCircle } from "react-icons/io5";
 import { formatConversationTime } from "../../utils/formatConversationTIme";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedConversation } from "../../redux/conversation/conversationSlice";
 import { fetchMessages } from "../../redux/message/messageSlice";
+import { useEffect, useRef, useState } from "react";
+import ConversationContextMenu from "./ConversationContextMenu";
 
 export default function MessageList({ conversation }) {
   const dispatch = useDispatch();
+  const [contextMenu, setContextMenu] = useState(null);
+  const menuRef = useRef(null);
 
   const isTyping = useSelector(
     (state) =>
@@ -18,6 +22,35 @@ export default function MessageList({ conversation }) {
       dispatch(fetchMessages(conversation._id));
     }
   }
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        contextMenu &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setContextMenu(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [contextMenu]);
+
+  function handleRightClick(e, conversationId) {
+    e.preventDefault();
+
+    setContextMenu({
+      conversationId,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  }
+
   let lastMessage = "Start a conversation";
 
   if (conversation.lastMessage) {
@@ -45,11 +78,20 @@ export default function MessageList({ conversation }) {
   return (
     <div
       onClick={handleClick}
-      className="flex items-center justify-between py-4 pl-6 pr-8 mx-2 hover:bg-gray-100 cursor-pointer transition-all duration-200 rounded-xl"
+      onContextMenu={(e) => handleRightClick(e, conversation._id)}
+      className="relative flex items-center justify-between py-4 pl-6 pr-8 mx-2 hover:bg-gray-100 cursor-pointer transition-all duration-200 rounded-xl"
     >
       {/* Left Section */}
       <div className="flex items-center gap-3">
-        <IoPersonCircleSharp className="text-5xl text-gray-400" />
+        {conversation.user?.profilePicture ? (
+          <img
+            src={conversation.user.profilePicture}
+            alt={conversation.user.name}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <IoPersonCircle className="w-10 h-10 text-gray-400" />
+        )}
 
         <div className="flex flex-col">
           <span className="text-gray-900 font-semibold text-lg">
@@ -77,6 +119,15 @@ export default function MessageList({ conversation }) {
           </span>
         )}
       </div>
+      {contextMenu?.conversationId === conversation._id && (
+        <ConversationContextMenu
+          conversation={conversation}
+          setContextMenu={setContextMenu}
+          menuRef={menuRef}
+          x={contextMenu.x}
+          y={contextMenu.y}
+        />
+      )}
     </div>
   );
 }

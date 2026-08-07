@@ -18,3 +18,13 @@ export const createConversation = async (receiverId) => {
     throw error;
   }
 };
+
+export const deleteConversationForMe = async (conversationId) => {
+  try {
+    return api.patch(`/conversations/${conversationId}/delete-for-me`);
+  } catch (error) {
+    console.log(error.response);
+    if (error.response) throw error.response;
+    throw error;
+  }
+};

@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
+  deleteMessageForEveryone as deleteMessageForEveryoneService,
+  deleteMessageForMe as deleteMessageForMeService,
   getMessages,
   markSeenMessage as markConversationAsSeenService,
   sendMessage as sendMessageService,
@@ -49,6 +51,36 @@ export const markConversationAsSeen = createAsyncThunk(
   },
 );
 
+export const deleteMessageForEveryone = createAsyncThunk(
+  "message/deleteMessageForEveryone",
+  async (messageId, { rejectWithValue }) => {
+    try {
+      const response = await deleteMessageForEveryoneService(messageId);
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong",
+      );
+    }
+  },
+);
+
+export const deleteMessageForMe = createAsyncThunk(
+  "message/deleteMessageForMe",
+  async (messageId, { rejectWithValue }) => {
+    try {
+      const response = await deleteMessageForMeService(messageId);
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong",
+      );
+    }
+  },
+);
+
 const updateSeenMessages = (state, payload) => {
   const { messageIds, seenAt } = payload;
 
@@ -75,6 +107,23 @@ const messageSlice = createSlice({
 
     clearMessages: (state) => {
       state.messages = [];
+    },
+
+    messageDeleteToEveryone(state, action) {
+      const deletedMessage = action.payload;
+      const index = state.messages.findIndex(
+        (message) => message._id === deletedMessage._id,
+      );
+
+      if (index !== -1) {
+        state.messages[index] = deletedMessage;
+      }
+    },
+
+    messageDeleteToMe(state, action) {
+      state.messages = state.messages.filter(
+        (message) => message._id !== action.payload._id,
+      );
     },
   },
 
@@ -117,10 +166,52 @@ const messageSlice = createSlice({
       .addCase(markConversationAsSeen.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(deleteMessageForEveryone.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMessageForEveryone.fulfilled, (state, action) => {
+        console.log(action.payload);
+        state.loading = false;
+        const deletedMessage = action.payload.data;
+
+        const index = state.messages.findIndex(
+          (message) => message._id === deletedMessage._id,
+        );
+
+        if (index !== -1) {
+          state.messages[index] = deletedMessage;
+        }
+      })
+      .addCase(deleteMessageForEveryone.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteMessageForMe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMessageForMe.fulfilled, (state, action) => {
+        state.loading = false;
+
+        state.messages = state.messages.filter(
+          (message) => message._id !== action.payload.data._id,
+        );
+      })
+      .addCase(deleteMessageForMe.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { addMessage, messagesSeen, clearMessages } = messageSlice.actions;
+export const {
+  addMessage,
+  messagesSeen,
+  clearMessages,
+  messageDeleteToEveryone,
+  messageDeleteToMe,
+} = messageSlice.actions;
 
 export default messageSlice.reducer;

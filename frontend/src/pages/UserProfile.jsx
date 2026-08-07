@@ -61,7 +61,7 @@ export default function UserProfile() {
       <div className="shadow flex items-center justify-between p-4">
         <div
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex items-center gap-2 cursor-pointer border border-stone-200 px-6 py-2 rounded-xl text-xl font-semibold shadow-md/10 shadow-black  hover:bg-linear-to-b/longer from-white- to-gray-200 transition-all duration-400"
         >
           <IoArrowBack className="text-2xl" />
           <h1 className="text-xl font-semibold">Back</h1>
@@ -81,15 +81,15 @@ export default function UserProfile() {
         <div className="flex flex-col items-center py-8">
           {/* Avatar */}
           <div className="relative group">
-            <img
-              src={user?.profilePicture || "https://i.pravatar.cc/300"}
-              alt=""
-              className="w-36 h-36 rounded-full object-cover border-4 border-stone-400"
-            />
-
-            <button className="absolute bottom-2 right-2  text-white rounded-full p-3 ">
-              <IoCamera className="text-xl" />
-            </button>
+            {user?.profilePicture ? (
+              <img
+                src={user.profilePicture}
+                alt={user.name}
+                className="w-36 h-36 rounded-full object-cover object-center  border-stone-400"
+              />
+            ) : (
+              <IoPersonCircle className="w-36 h-36 rounded-full   border-stone-400" />
+            )}
           </div>
 
           <h2 className="text-2xl font-bold mt-5">{user?.name}</h2>

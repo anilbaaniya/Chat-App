@@ -1,7 +1,8 @@
 import express from "express";
 import { protect } from "../controllers/authController.js";
 import {
-  deleteMessage,
+  deleteMessageForEveryone,
+  deleteMessageForMe,
   getMessages,
   // seenMessage,
   sendMessage,
@@ -15,6 +16,8 @@ messageRoute.route("/").post(sendMessage);
 
 messageRoute.get("/:conversationId", getMessages);
 
-messageRoute.delete("/:messageId", deleteMessage);
+messageRoute.patch("/:messageId/delete-for-everyone", deleteMessageForEveryone);
+
+messageRoute.patch("/:messageId/delete-for-me", deleteMessageForMe);
 
 // messageRoute.patch("/:messageId/seen", seenMessage);

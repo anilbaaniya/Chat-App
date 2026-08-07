@@ -1,6 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getConversations } from "../../services/conversationService.js";
-import { createConversation as createConversationService } from "../../services/conversationService.js";
+import {
+  createConversation as createConversationService,
+  deleteConversationForMe as deleteConversationForMeService,
+} from "../../services/conversationService.js";
 
 const initialState = {
   conversations: [],
@@ -30,6 +33,20 @@ export const fetchConversations = createAsyncThunk(
     try {
       const response = await getConversations();
       // console.log(response.data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.data?.message || "Failed to fetch the Conversations!",
+      );
+    }
+  },
+);
+
+export const deleteConversationForMe = createAsyncThunk(
+  "conversation/deleteConversationForMe",
+  async (conversationId, { rejectWithValue }) => {
+    try {
+      const response = await deleteConversationForMeService(conversationId);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -106,6 +123,29 @@ const conversationSlice = createSlice({
         }
       })
       .addCase(createConversation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteConversationForMe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteConversationForMe.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const deletedConversationId = action.payload.data._id;
+
+        state.conversations = state.conversations.filter(
+          (conversation) => conversation._id !== deletedConversationId,
+        );
+
+        if (state.selectedConversation?._id === deletedConversationId) {
+          state.selectedConversation = null;
+        }
+
+        state.error = null;
+      })
+      .addCase(deleteConversationForMe.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

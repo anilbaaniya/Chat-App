@@ -3,13 +3,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signupUser } from "../redux/auth/authSlice";
 import { IoChatboxEllipses } from "react-icons/io5";
+import toast from "react-hot-toast";
+import { uploadToCloudinary } from "../services/cloudinaryService";
+import { RotatingLines } from "react-loader-spinner";
 
 export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { error } = useSelector((state) => state.auth);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [preview, setPreview] = useState("");
+
+  const { error, loading } = useSelector((state) => state.auth);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -17,13 +23,45 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     // console.log(user);
     e.preventDefault();
-    const result = await dispatch(
-      signupUser({ name, email, password, confirmPassword }),
-    );
+    try {
+      let profilePicUrl = "";
 
-    if (signupUser.fulfilled.match(result)) {
-      navigate("/login");
+      if (profilePicture) {
+        const uploadFolder = "chatApp";
+        profilePicUrl = await uploadToCloudinary(profilePicture, uploadFolder);
+      }
+
+      const result = await dispatch(
+        signupUser({
+          name,
+          email,
+          password,
+          confirmPassword,
+          profilePicture: profilePicUrl,
+        }),
+      );
+
+      if (signupUser.fulfilled.match(result)) {
+        toast.success("Account created successfully!");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.log(error);
     }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validation
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image.");
+      return;
+    }
+
+    setProfilePicture(file);
+    setPreview(URL.createObjectURL(file));
   };
 
   return (
@@ -104,24 +142,78 @@ export default function Signup() {
               required
             />
           </div>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <label className="block text-sm font-medium text-gray-700">
+                Profile Picture
+              </label>
+              <span className="font-semibold text-lg">(Optional)</span>
+            </div>
+
+            <label
+              htmlFor="profile-picture"
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700"
+            >
+              {profilePicture ? "Change Image" : "Choose Image"}
+            </label>
+
+            <input
+              id="profile-picture"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+
+            {preview && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-20 h-20 rounded-full object-cover border"
+                />
+                <p className="text-sm text-green-600">
+                  ✓ {profilePicture.name}
+                </p>
+              </div>
+            )}
+          </div>
 
           <p className="text-red-600 text-sm pl-4">{error}</p>
 
           {/* Button */}
           <button
+            disabled={loading}
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white py-2 rounded-md transition"
           >
-            Signup
+            {loading ? "Creating account" : "Signup"}
           </button>
         </form>
 
-        <p className="text-sm text-center mt-4 text-gray-600">
-          Already have an account?{" "}
-          <NavLink to="/login" className="text-blue-600 hover:underline">
-            Login
-          </NavLink>
-        </p>
+        {loading && (
+          <div className="pl-30 mt-6">
+            <RotatingLines
+              visible={true}
+              height="96"
+              width="96"
+              color="grey"
+              strokeWidth="5"
+              animationDuration="0.75"
+              ariaLabel="rotating-lines-loading"
+              wrapperStyle={{}}
+              wrapperClass=""
+            />
+          </div>
+        )}
+        {!loading && (
+          <p className="text-sm text-center mt-4 text-gray-600">
+            Already have an account?{" "}
+            <NavLink to="/login" className="text-indigo-600 hover:underline">
+              Login
+            </NavLink>
+          </p>
+        )}
       </div>
     </div>
   );

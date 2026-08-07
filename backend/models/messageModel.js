@@ -43,7 +43,7 @@ const messageSchema = new mongoose.Schema(
 
     messageType: {
       type: String,
-      enum: ["text", "image", "file", "video"],
+      enum: ["text", "image", "file", "video", "deleted"],
       default: "text",
     },
 
@@ -76,6 +76,13 @@ const messageSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    deletedFor: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true },
 );

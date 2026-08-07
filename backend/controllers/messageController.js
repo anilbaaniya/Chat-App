@@ -47,6 +47,12 @@ export const sendMessage = catchAsync(async (req, res, next) => {
   conversation.lastMessageSender = req.user._id;
   conversation.lastMessageAt = message.createdAt;
 
+  // Remove sender from deletedFor if they previously deleted
+  // this conversation
+  // conversation.deletedFor = conversation.deletedFor.filter(
+  //   (item) => item.user.toString() !== senderId.toString(),
+  // );
+
   if (!(conversation.unreadCount instanceof Map)) {
     conversation.unreadCount = new Map(
       Object.entries(conversation.unreadCount || {}),
@@ -86,6 +92,7 @@ export const sendMessage = catchAsync(async (req, res, next) => {
 
 export const getMessages = catchAsync(async (req, res, next) => {
   const { conversationId } = req.params;
+  const userId = req.user._id;
 
   const conversation = await Conversation.findOne({
     _id: conversationId,
@@ -96,7 +103,28 @@ export const getMessages = catchAsync(async (req, res, next) => {
     return next(new AppError("Conversation not found.", 404));
   }
 
-  const messages = await Message.find({ conversationId })
+  const deletedRecord = conversation.deletedFor.find(
+    (item) => item.user.toString() === userId.toString(),
+  );
+
+  // Base query
+  const messageQuery = {
+    conversationId,
+    // Hide messages that were individually deleted for this user
+    deletedFor: {
+      $ne: userId,
+    },
+  };
+
+  // If the user deleted the conversation,
+  // only show messages created after that deletion
+  if (deletedRecord) {
+    messageQuery.createdAt = {
+      $gt: deletedRecord.deletedAt,
+    };
+  }
+
+  const messages = await Message.find(messageQuery)
     .populate("sender", "name email profilePicture")
     .populate("receiver", "name email profilePicture")
     .sort("createdAt");
@@ -108,13 +136,16 @@ export const getMessages = catchAsync(async (req, res, next) => {
   });
 });
 
-export const deleteMessage = catchAsync(async (req, res, next) => {
+export const deleteMessageForEveryone = catchAsync(async (req, res, next) => {
   const { messageId } = req.params;
 
   const message = await Message.findById(messageId);
 
   if (!message) {
     return next(new AppError("Message not found", 404));
+  }
+  if (message.isDeleted) {
+    return next(new AppError("Message is already deleted", 400));
   }
 
   if (message.sender.toString() !== req.user._id.toString()) {
@@ -123,10 +154,70 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
     );
   }
 
-  await message.deleteOne();
+  const deletedMessage = await Message.findByIdAndUpdate(
+    messageId,
+    {
+      isDeleted: true,
+      deletedAt: new Date(),
+      messageType: "deleted",
+      text: "",
+      image: "",
+      video: "",
+      file: "",
+    },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    },
+  );
+
+  const io = getIo();
+
+  emitToUser(io, message.sender, "message-deleted-to-everyone", deletedMessage);
+
+  emitToUser(
+    io,
+    message.receiver,
+    "message-deleted-to-everyone",
+    deletedMessage,
+  );
+
+  return res.status(200).json({
+    status: "success",
+    data: deletedMessage,
+  });
+});
+
+export const deleteMessageForMe = catchAsync(async (req, res, next) => {
+  const { messageId } = req.params;
+  const userId = req.user._id;
+
+  const message = await Message.findById(messageId);
+
+  if (!message) {
+    return next(new AppError("Message not found", 404));
+  }
+
+  const isParticipant =
+    message.sender.toString() === userId.toString() ||
+    message.receiver.toString() === userId.toString();
+
+  if (!isParticipant) {
+    return next(
+      new AppError("You are not allowed to delete this message", 403),
+    );
+  }
+
+  const deletedMessage = await Message.findByIdAndUpdate(messageId, {
+    $addToSet: { deletedFor: userId },
+  });
+
+  const io = getIo();
+
+  emitToUser(io, userId, "delete-message-for-me", deletedMessage);
 
   res.status(200).json({
     status: "success",
-    data: "Message deleted successfully",
+    data: deletedMessage,
   });
 });

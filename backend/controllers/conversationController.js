@@ -47,9 +47,10 @@ export const createConversation = catchAsync(async (req, res, next) => {
 
 // Get Single Conversation
 export const getConversation = catchAsync(async (req, res, next) => {
-  const conversation = await Conversation.findById(
-    req.params.conversationId,
-  ).populate("participants", "name email profilePicture");
+  const conversation = await Conversation.findOne({
+    _id: req.params.conversationId,
+    participants: req.user._id,
+  }).populate("participants", "name email profilePicture");
 
   if (!conversation) {
     return res.status(400).json({
@@ -65,41 +66,113 @@ export const getConversation = catchAsync(async (req, res, next) => {
 });
 
 // Get all the conversations
+// export const getConversations = catchAsync(async (req, res, next) => {
+//   const conversations = await Conversation.find({
+//     participants: req.user._id,
+//     // "deletedFor.user": { $ne: req.user._id },
+//   })
+//     .populate("participants", "name email profilePicture")
+//     .populate("lastMessage")
+//     .sort("-lastMessageAt");
+
+//   const formattedConversations = conversations.map((conversation) => {
+//     // Find the other participant (not the logged-in user)
+//     const otherUser = conversation.participants.find(
+//       (participant) => participant._id.toString() !== req.user._id.toString(),
+//     );
+
+//     const unreadCountMap =
+//       conversation.unreadCount instanceof Map
+//         ? conversation.unreadCount
+//         : new Map(Object.entries(conversation.unreadCount || {}));
+
+//     return {
+//       _id: conversation._id,
+
+//       user: otherUser,
+
+//       lastMessage: conversation.lastMessage,
+
+//       lastMessageAt: conversation.lastMessageAt,
+
+//       unreadCount: unreadCountMap.get(req.user._id.toString()) ?? 0,
+
+//       updatedAt: conversation.updatedAt,
+
+//       createdAt: conversation.createdAt,
+//     };
+//   });
+
+//   res.status(200).json({
+//     status: "success",
+//     result: formattedConversations.length,
+//     data: formattedConversations,
+//   });
+// });
 export const getConversations = catchAsync(async (req, res, next) => {
+  const userId = req.user._id;
+
   const conversations = await Conversation.find({
-    participants: req.user._id,
+    participants: userId,
   })
     .populate("participants", "name email profilePicture")
     .populate("lastMessage")
     .sort("-lastMessageAt");
 
-  const formattedConversations = conversations.map((conversation) => {
-    // Find the other participant (not the logged-in user)
-    const otherUser = conversation.participants.find(
-      (participant) => participant._id.toString() !== req.user._id.toString(),
-    );
+  const formattedConversations = conversations
+    .filter((conversation) => {
+      // Find deletion record for this user
+      const deletedRecord = (conversation.deletedFor || []).find(
+        (item) => item.user.toString() === userId.toString(),
+      );
 
-    const unreadCountMap =
-      conversation.unreadCount instanceof Map
-        ? conversation.unreadCount
-        : new Map(Object.entries(conversation.unreadCount || {}));
+      // User has never deleted this conversation
+      if (!deletedRecord) {
+        return true;
+      }
 
-    return {
-      _id: conversation._id,
+      // Show conversation again only if a new message
+      // was created after the user deleted it
+      return conversation.lastMessageAt > deletedRecord.deletedAt;
+    })
+    .map((conversation) => {
+      const deletedRecord = (conversation.deletedFor || []).find(
+        (item) => item.user.toString() === userId.toString(),
+      );
 
-      user: otherUser,
+      const otherUser = conversation.participants.find(
+        (participant) => participant._id.toString() !== userId.toString(),
+      );
 
-      lastMessage: conversation.lastMessage,
+      const unreadCountMap =
+        conversation.unreadCount instanceof Map
+          ? conversation.unreadCount
+          : new Map(Object.entries(conversation.unreadCount || {}));
 
-      lastMessageAt: conversation.lastMessageAt,
+      // Determine whether the last message is newer
+      // than the deletion time
+      const hasNewMessage =
+        !deletedRecord || conversation.lastMessageAt > deletedRecord.deletedAt;
 
-      unreadCount: unreadCountMap.get(req.user._id.toString()) ?? 0,
+      return {
+        _id: conversation._id,
 
-      updatedAt: conversation.updatedAt,
+        user: otherUser,
 
-      createdAt: conversation.createdAt,
-    };
-  });
+        // Don't show old last message after deletion
+        lastMessage: hasNewMessage ? conversation.lastMessage : null,
+
+        lastMessageAt: hasNewMessage ? conversation.lastMessageAt : null,
+
+        unreadCount: hasNewMessage
+          ? (unreadCountMap.get(userId.toString()) ?? 0)
+          : 0,
+
+        updatedAt: conversation.updatedAt,
+
+        createdAt: conversation.createdAt,
+      };
+    });
 
   res.status(200).json({
     status: "success",
@@ -190,5 +263,37 @@ export const markConversationAsSeen = catchAsync(async (req, res, next) => {
       seenAt,
       unreadCount: 0,
     },
+  });
+});
+
+export const deleteConversationForMe = catchAsync(async (req, res, next) => {
+  const { conversationId } = req.params;
+
+  const userId = req.user._id;
+
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    participants: userId,
+  });
+
+  if (!conversation) {
+    return next(new AppError("Conversation not found", 404));
+  }
+
+  const existingRecord = conversation.deletedFor.find(
+    (item) => item.user.toString() === userId.toString(),
+  );
+
+  if (existingRecord) {
+    existingRecord.deletedAt = new Date();
+  } else {
+    conversation.deletedFor.push({ user: userId, deletedAt: new Date() });
+  }
+
+  await conversation.save();
+
+  res.status(200).json({
+    status: "success",
+    data: conversation,
   });
 });

@@ -69,7 +69,7 @@ export default function SearchBox() {
                   <img
                     src={user.profilePicture}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-10 h-10 rounded-full object-cover object-center"
                   />
                 ) : (
                   <IoPersonCircleSharp className="text-5xl text-gray-400" />

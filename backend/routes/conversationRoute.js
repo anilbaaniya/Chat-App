@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createConversation,
+  deleteConversationForMe,
   getConversation,
   getConversations,
   markConversationAsSeen,
@@ -15,3 +16,8 @@ conversationRoute.route("/").post(createConversation).get(getConversations);
 conversationRoute.route("/:conversationId").get(getConversation);
 
 conversationRoute.patch("/:conversationId/seen", markConversationAsSeen);
+
+conversationRoute.patch(
+  "/:conversationId/delete-for-me",
+  deleteConversationForMe,
+);

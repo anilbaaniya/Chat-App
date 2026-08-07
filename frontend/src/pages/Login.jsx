@@ -3,6 +3,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/auth/authSlice";
 import { IoChatboxEllipses } from "react-icons/io5";
+import { RotatingLines } from "react-loader-spinner";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,8 @@ export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const { loading } = useSelector((state) => state.auth);
+
   const handleSubmit = async (e) => {
     // console.log(user);
     e.preventDefault();
@@ -20,6 +24,7 @@ export default function Login() {
     // console.log(result.payload.data);
 
     if (loginUser.fulfilled.match(result)) {
+      toast.success("Login successful!");
       navigate("/");
     }
   };
@@ -74,7 +79,7 @@ export default function Login() {
           <div className="text-right">
             <NavLink
               to="/forgotPassword"
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline"
             >
               Forgot Password?
             </NavLink>
@@ -82,20 +87,38 @@ export default function Login() {
 
           {/* Button */}
           <button
+            disabled={loading}
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white py-2 rounded-md transition"
           >
             Login
           </button>
         </form>
+        {loading && (
+          <div className="pl-30 mt-6">
+            <RotatingLines
+              visible={true}
+              height="96"
+              width="96"
+              color="grey"
+              strokeWidth="5"
+              animationDuration="0.75"
+              ariaLabel="rotating-lines-loading"
+              wrapperStyle={{}}
+              wrapperClass=""
+            />
+          </div>
+        )}
 
         {/* Extra */}
-        <p className="text-sm text-center mt-4 text-gray-600">
-          Don't have an account?{" "}
-          <NavLink to="/signup" className="text-blue-600 hover:underline">
-            Sign up
-          </NavLink>
-        </p>
+        {!loading && (
+          <p className="text-sm text-center mt-4 text-gray-600">
+            Don't have an account?{" "}
+            <NavLink to="/signup" className="text-indigo-600 hover:underline">
+              Sign up
+            </NavLink>
+          </p>
+        )}
       </div>
     </div>
   );
