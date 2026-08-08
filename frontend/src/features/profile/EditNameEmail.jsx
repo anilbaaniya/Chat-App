@@ -78,9 +78,10 @@ export default function EditNameEmail({ setEditing, user }) {
         </button>
         <button
           type="submit"
-          className=" rounded-xl px-4 py-1 bg-blue-700 text-white cursor-pointer"
+          disabled={isSubmitting}
+          className="disabled:cursor-not-allowed disabled:opacity-50 rounded-xl px-4 py-1 bg-blue-700 text-white cursor-pointer"
         >
-          Update
+          {isSubmitting ? "Updating..." : "Update"}
         </button>
       </div>
     </form>

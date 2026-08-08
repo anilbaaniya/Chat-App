@@ -93,10 +93,11 @@ export default function ChangePassword({ setChanging }) {
           Cancel
         </button>
         <button
+          disabled={isSubmitting}
           type="submit"
-          className=" rounded-xl px-4 py-2 bg-blue-700 text-white cursor-pointer"
+          className="disabled:cursor-not-allowed disabled:opacity-50 rounded-xl px-4 py-2 bg-blue-700 text-white cursor-pointer"
         >
-          {isSubmitting ? "Updating" : "Update"}
+          {isSubmitting ? "Updating..." : "Update"}
         </button>
       </div>
     </form>

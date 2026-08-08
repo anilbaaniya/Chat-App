@@ -62,9 +62,13 @@ export default function ProtectedLayout() {
     };
   }, [dispatch]);
 
-  if (loading) {
+  const isAuthChecking = loading && !user && !isAuthenticated;
+
+  if (isAuthChecking) {
     return (
-      <TailSpin height="60" width="60" color="#2563eb" ariaLabel="loading" />
+      <div className="min-h-screen flex items-center justify-center">
+        <TailSpin height="60" width="60" color="#2563eb" ariaLabel="loading" />
+      </div>
     );
   }
   if (!isAuthenticated) {

@@ -76,14 +76,14 @@ export default function Login() {
           <p className="text-red-600 text-sm pl-4">{error}</p>
 
           {/* Forgot Password */}
-          <div className="text-right">
+          {/* <div className="text-right">
             <NavLink
               to="/forgotPassword"
               className="text-sm text-indigo-600 hover:underline"
             >
               Forgot Password?
             </NavLink>
-          </div>
+          </div> */}
 
           {/* Button */}
           <button
