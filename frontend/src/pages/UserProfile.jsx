@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   IoArrowBack,
-  IoCamera,
   IoMail,
   IoLogOutOutline,
   IoPersonCircle,

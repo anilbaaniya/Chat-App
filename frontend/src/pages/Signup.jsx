@@ -185,7 +185,7 @@ export default function Signup() {
           <button
             disabled={loading}
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white py-2 rounded-md transition"
+            className="disabled:cursor-not-allowed disabled:opacity-50 w-full bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white py-2 rounded-md transition"
           >
             {loading ? "Creating account" : "Signup"}
           </button>

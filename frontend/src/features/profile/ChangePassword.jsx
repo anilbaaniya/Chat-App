@@ -96,7 +96,7 @@ export default function ChangePassword({ setChanging }) {
           type="submit"
           className=" rounded-xl px-4 py-2 bg-blue-700 text-white cursor-pointer"
         >
-          Update
+          {isSubmitting ? "Updating" : "Update"}
         </button>
       </div>
     </form>
